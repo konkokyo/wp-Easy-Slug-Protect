@@ -8,6 +8,10 @@ if (!defined('ABSPATH')) {
  * セットアップクラス
  */
 class ESP_Setup {
+    public function __construct() {
+        require_once ESP_PATH . 'includes/class-esp-config.php';
+    }
+
     public function activate() {
         $this->create_tables();
         $this->create_options();

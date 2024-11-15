@@ -33,18 +33,11 @@ class ESP_Core {
      */
     private $cookie;
     
-    /**
-     * @var ESP_Settings 設定操作クラスのインスタンス
-     */
-    private $settings;
 
     /**
      * コンストラクタ
      */
     public function __construct() {
-        require_once ESP_PATH . 'admin/classes/class-esp-admin-setting.php';
-        $this->settings = ESP_Settings::get_instance();
-
         $this->auth = new ESP_Auth();
         $this->logout = new ESP_Logout();
         $this->security = new ESP_Security();

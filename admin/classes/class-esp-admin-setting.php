@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 class ESP_Settings {
     
     const SETTING_NAMES = ESP_Config::OPTION_NAMES;
-    const DEFAULT_SETTINGS = ESP_Config::OPTION_DEFAULS;
+    const DEFAULT_SETTINGS = ESP_Config::OPTION_DEFAULTS;
 
     /**
      * シングルトンインスタンス
