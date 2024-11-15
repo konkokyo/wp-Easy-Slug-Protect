@@ -52,6 +52,8 @@ class ESP_Core {
         add_action('template_redirect', [$this, 'check_protected_page']);
         add_action('wp_ajax_esp_clean_old_data', [$this, 'clean_old_data']);
         add_action('wp_ajax_nopriv_esp_clean_old_data',[$this, 'clean_old_data']);
+        // スタイルの読み込み
+        add_action('wp_enqueue_scripts', [$this, 'register_front_styles']);
         //  ログアウト処理のハンドリング
         add_action('init', [$this, 'handle_logout']);
         // Cookie設定のハンドリング
@@ -78,6 +80,33 @@ class ESP_Core {
     }
 
     /**
+     * ショートコードに応じてフロントエンド用のCSSを登録
+     */
+        
+    public function register_front_styles() {
+        global $post;
+        if (!is_object($post)) {
+            return;
+        }
+
+        $content = $post->post_content;
+        
+        // ショートコードが含まれているか確認
+        if (
+            strpos($content, '[esp_login_form') !== false || 
+            strpos($content, '[esp_logout_button') !== false ||
+            $this->is_login_page_for_protected_path($post->ID)
+        ) {
+            wp_enqueue_style(
+                'esp-front-styles',
+                ESP_URL . 'front/esp-styles.css',
+                array(),
+                ESP_VERSION
+            );
+        }
+    }
+
+    /**
      * 保護ページのチェックと制御
      */
     public function check_protected_page() {
@@ -90,7 +119,7 @@ class ESP_Core {
         }
 
         // 現在のパスを取得
-        $current_path = '/' . trim($wp->request, '/') . '/';
+        $current_path = $this->get_current_path();
 
         // 保護対象のパスを取得
         $protected_paths = get_option('esp_protected_paths', array());
@@ -99,16 +128,7 @@ class ESP_Core {
         $target_path = $this->get_matching_protected_path($current_path, $protected_paths);
 
         // 現在のページがログインページかチェック
-        $is_login_page = false;
-        if ($post) {
-            foreach ($protected_paths as $path) {
-                if ($post->ID == $path['login_page']) {
-                    $is_login_page = true;
-                    $target_path = $path; // ログインページに対応する保護パス設定を取得
-                    break;
-                }
-            }
-        }
+        $is_login_page = $this->is_login_page_for_protected_path($post->ID);
 
         // 保護対象でもログインページでもない場合は処理終了
         if (!$target_path && !$is_login_page) {
@@ -117,7 +137,7 @@ class ESP_Core {
 
         // POSTリクエストの場合はログイン処理を優先
         if (isset($_POST['esp_password'])) {
-            $this->handle_login_request($target_path);
+            $this->handle_login_request($is_login_page);
             return;
         }
 
@@ -154,6 +174,17 @@ class ESP_Core {
     }
 
     /**
+     * 現在のパスを取得する
+     * 
+     * @return string パス
+     */
+    private function get_current_path(){
+        global $wp;
+        $current_path = '/' . trim($wp->request, '/') . '/';
+        return $current_path;
+    }
+
+    /**
      * 保護対象のパスを取得
      * 
      * @param string $current_path 現在のパス
@@ -170,37 +201,119 @@ class ESP_Core {
     }
 
     /**
+     * 指定されたページIDがいずれかの保護パスのログインページとして設定されているか確認
+     * 
+     * @param int $page_id ページID
+     * @return bool
+     */
+    private function is_login_page_for_protected_path($page_id) {
+        $protected_paths = get_option('esp_protected_paths', array());
+        foreach ($protected_paths as $path_setting) {
+            if ($path_setting['login_page'] == $page_id) {
+                return $path_setting;
+            }
+        }
+        return false;
+    }
+
+    /**
      * ログインリクエストの処理
      * 
      * @param array $path_settings パスの設定
      */
     private function handle_login_request($path_settings) {
         // CSRFチェック
-        if (!isset($_POST['esp_nonce']) || 
-            !$this->security->verify_nonce($_POST['esp_nonce'], $path_settings['path'])) {
+        if (!isset($_POST['esp_nonce']) || !$this->security->verify_nonce($_POST['esp_nonce'], $path_settings['path'])) {
             $this->session->set_error(__('不正なリクエストです。', 'easy-slug-protect'));
-            $this->redirect_to_login_page($path_settings, $_SERVER['REQUEST_URI']);
+            $this->redirect_to_login_page($path_settings);
             return;
         }
+
+        // リダイレクト先取得
+        $redirect_to = $this->get_redirect_to($path_settings);
 
         // ログイン処理
         $password = isset($_POST['esp_password']) ? $_POST['esp_password'] : '';
         if ($this->auth->process_login($path_settings['path'], $password)) {
-            // Cookie設定は handle_cookies で処理されるため、
-            // ここでは直接呼び出さない
-            
-            // ログイン成功時は元のページへリダイレクト
-            $redirect_to = isset($_POST['redirect_to']) ? 
-                home_url($_POST['redirect_to']) : 
-                home_url($path_settings['path']);
-
-            // リダイレクト（cookieクラス使用でcookie適用させる）
+            // ログイン成功時は元のページへリダイレクト（cookieクラス使用でcookie適用させる）
             $this->cookie->do_redirect($redirect_to);
         }
 
         // ログイン失敗時はログインページへリダイレクト
-        $this->redirect_to_login_page($path_settings, $_SERVER['REQUEST_URI']);
+        $this->redirect_to_login_page($path_settings, $redirect_to);
     }
+
+    /**
+     * リダイレクト先の取得
+     * パスを安全な形式に整形して返す
+     * 
+     * @param array|null $path_settings パスの設定
+     * @return string サニタイズ済みのエンコードされたパス
+     */
+    private function get_redirect_to($path_settings = null) {
+        // リダイレクト先のパスを取得
+        if (isset($_POST['redirect_to'])) {
+            $path = $_POST['redirect_to'];
+        } elseif (isset($_GET['redirect_to'])) {
+            $path = $_GET['redirect_to'];
+        } elseif (!is_null($path_settings) && isset($path_settings['path'])) {
+            $path = $path_settings['path'];
+        } else {
+            return '/';
+        }
+        
+        // 整形したパスを返す   
+        return $this->sanitize_path($path);
+    }
+
+    /**
+     * パスを安全な形式に整形する
+     * 
+     * @param string $path 整形前のパス
+     * @return string 整形後の安全なパス
+     */
+    private function sanitize_path($path) {
+        // URLデコード（エンコードされている場合）
+        $decoded_path = rawurldecode($path);
+        
+        // プロトコルとドメインを除去
+        $path_only = preg_replace('#^https?://[^/]+#', '', $decoded_path);
+        
+        // パスを正規化
+        $normalized = wp_normalize_path($path_only);
+        
+        // 先頭と末尾のスラッシュを正規化
+        $safe_path = '/' . trim($normalized, '/') . '/';
+        
+        // 危険な文字や連続したスラッシュを除去
+        $safe_path = preg_replace(
+            [
+                '#[<>:"\'%\{\}\(\)\[\]\^`\\\\]#',  // 危険な文字を除去
+                '#/+#'                              // 連続したスラッシュを単一のスラッシュに
+            ],
+            [
+                '',
+                '/'
+            ],
+            $safe_path
+        );
+        
+        // 親ディレクトリへの参照（../）を除去
+        $parts = explode('/', $safe_path);
+        $safe_parts = array();
+        
+        foreach ($parts as $part) {
+            if ($part === '.' || $part === '..') {
+                continue;
+            }
+            if ($part !== '') {
+                $safe_parts[] = $part;
+            }
+        }
+        
+        return '/' . implode('/', $safe_parts) . '/';
+    }
+
 
     /**
      * ログインページへのリダイレクト
@@ -208,14 +321,17 @@ class ESP_Core {
      * @param array $path_settings パスの設定
      * @param string $current_url 現在のURL
      */
-    private function redirect_to_login_page($path_settings, $current_url) {
+    private function redirect_to_login_page($path_settings, $current_path = null) {
+        if (is_null($current_path)) {
+            $current_path = $this->get_current_path();
+        }
         $login_url = add_query_arg(
             array(
-                'redirect_to' => urlencode($current_url)
+                'redirect_to' => urlencode($current_path)
             ),
             get_permalink($path_settings['login_page'])
         );
-        $this->cookie->do_redirect($login_url);
+        $this->cookie->do_redirect($login_url, false);
     }
 
     /**
@@ -266,13 +382,26 @@ class ESP_Core {
         return $this->auth->get_login_form($target_path['path'], $redirect_to);
     }
 
+    /**
+     * ログアウトボタンのレンダリング
+     * 
+     * @param array $atts ショートコード属性
+     * @return string ログアウトボタンのHTML
+     */
+    public function render_logout_button($atts = array()) {
+        return $this->logout->get_logout_button($atts);
+    }
 
     /**
      * ログアウト処理のハンドリング
      */
     public function handle_logout() {
         if (isset($_POST['esp_action']) && $_POST['esp_action'] === 'logout') {
+            // ログアウト処理
             $this->logout->process_logout();
+            // リダイレクト実行
+            $redirect_to = $this->get_redirect_to();
+            $this->cookie->do_redirect($redirect_url);
         }
     }
 

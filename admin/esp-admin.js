@@ -10,6 +10,7 @@
 				this.bindEvents();
 				this.setupFormValidation();
 				this.setupUnsavedChangesWarning();
+				this.lockExistingPaths();
 			},
 
 			// イベントのバインド
@@ -17,6 +18,7 @@
 				$("#esp-add-path").on("click", this.addNewPath.bind(this));
 				$(document).on("click", ".esp-remove-path", this.removePath.bind(this));
 				this.setupPasswordToggle();
+				this.setupMailNotifications();
 			},
 
 			/**
@@ -88,6 +90,23 @@
 			},
 
 			/**
+			 * 既存のパスを変更できないようにする
+			 */
+			lockExistingPaths: function () {
+				$(".esp-path-item").each(function () {
+					const $pathInput = $(this).find('input[name*="[path]"]');
+					const currentValue = $pathInput.val();
+					if ($pathInput.val()) {
+						// パス入力フィールドを読み取り専用に
+						$pathInput
+							.prop("readonly", true)
+							.addClass("esp-locked-input")
+							.attr("data-original-value", currentValue);
+					}
+				});
+			},
+
+			/**
 			 * 保護パスの削除
 			 * @param {Event} e イベントオブジェクト
 			 */
@@ -96,14 +115,7 @@
 				const $pathItem = $(e.target).closest(".esp-path-item");
 
 				// 確認ダイアログ
-				if (
-					confirm(
-						wp.i18n.__(
-							"この保護パスを削除してもよろしいですか？",
-							"easy-slug-protect"
-						)
-					)
-				) {
+				if (confirm(espAdminData.i18n.confirmDelete)) {
 					$pathItem.addClass("removing").slideUp(300, function () {
 						$(this).remove();
 					});
@@ -131,11 +143,46 @@
 			},
 
 			/**
+			 * メール通知設定の制御
+			 * 通知項目の有効/無効を切り替える
+			 */
+			setupMailNotifications: function () {
+				const $enableNotifications = $("#esp-enable-notifications");
+				const $notificationItems = $(".esp-notification-items");
+
+				function toggleNotificationOptions() {
+					if ($enableNotifications.is(":checked")) {
+						// 通知が有効な場合、各通知項目を有効化
+						$notificationItems
+							.removeClass("esp-notifications-disabled")
+							.find('input[type="checkbox"]')
+							.prop("disabled", false);
+					} else {
+						// 通知が無効な場合、各通知項目を無効化
+						$notificationItems
+							.addClass("esp-notifications-disabled")
+							.find('input[type="checkbox"]')
+							.prop("disabled", true);
+					}
+				}
+
+				// 通知設定変更時の処理
+				$enableNotifications.on("change", function () {
+					toggleNotificationOptions();
+					ESP_Admin.markFormAsUnsaved();
+				});
+
+				// 初期状態の設定
+				toggleNotificationOptions();
+			},
+
+			/**
 			 * フォームバリデーションの設定
 			 */
 			setupFormValidation: function () {
 				$("#esp-settings-form").on("submit", function (e) {
 					const $form = $(this);
+					let isValid = true;
 
 					// HTML5バリデーション
 					if (!this.checkValidity()) {
@@ -151,7 +198,6 @@
 						remember_time: { min: 1, max: 365 },
 					};
 
-					let isValid = true;
 					$.each(numericalInputs, function (name, range) {
 						const $input = $form.find(`[name*="${name}"]`);
 						const value = parseInt($input.val(), 10);
@@ -174,11 +220,31 @@
 						return false;
 					}
 
-					// pathの重複チェックと形式チェック
-					const paths = [];
-					const loginPages = new Set();
+					// 既存のパスが変更されていないかチェック
+					let hasPathModification = false;
+					$(".esp-locked-input").each(function () {
+						const $input = $(this);
+						if ($input.data("original-value") !== $input.val()) {
+							hasPathModification = true;
+							$input.addClass("esp-error-input");
+						}
+					});
+
+					if (hasPathModification) {
+						alert(espAdminData.i18n.alertCantChengePath);
+						e.preventDefault();
+						return false;
+					}
+
+					// パスの重複チェック
+					const paths = new Map(); // パスと入力要素の対応を保存
+					const loginPages = new Map(); // ログインページと選択要素の対応を保存
+
+					// パスの重複チェック
+					let hasPathDuplicate = false;
 					$(".esp-path-input").each(function () {
-						let path = $(this).val().trim();
+						let $input = $(this);
+						let path = $input.val().trim();
 
 						// パスの形式を正規化
 						if (path && !path.startsWith("/")) {
@@ -187,51 +253,60 @@
 						if (path && !path.endsWith("/")) {
 							path += "/";
 						}
-						$(this).val(path);
+						$input.val(path);
 
-						// 重複チェック
-						if (paths.includes(path)) {
-							alert(
-								wp.i18n.__(
-									"パスが重複しています。各パスは一意でなければなりません。",
-									"easy-slug-protect"
-								)
-							);
-							$(this).focus();
+						if (paths.has(path)) {
+							hasPathDuplicate = true;
 							isValid = false;
-							return false;
+							const firstInput = paths.get(path);
+							firstInput.addClass("esp-error-input");
+							$input.addClass("esp-error-input");
 						}
-
-						paths.push(path);
+						paths.set(path, $input);
 					});
+
+					if (hasPathDuplicate) {
+						alert(espAdminData.i18n.alertDuplicatePath);
+						e.preventDefault();
+						return false;
+					}
 
 					// ログインページの重複チェック
-					$(".esp-path-content select[name*='[login_page]']").each(function () {
-						const loginPage = $(this).val();
+					let hasLoginPageDuplicate = false;
+					$('.esp-path-content select[name*="[login_page]"]').each(function () {
+						const $select = $(this);
+						const loginPage = $select.val();
 						if (loginPage && loginPages.has(loginPage)) {
-							alert(
-								wp.i18n.__(
-									"同じログインページが複数のパスに設定されています。各パスに一意のログインページを選択してください。",
-									"easy-slug-protect"
-								)
-							);
-							$(this).focus();
+							hasLoginPageDuplicate = true;
 							isValid = false;
-							return false;
+							const firstSelect = loginPages.get(loginPage);
+							firstSelect.addClass("esp-error-input");
+							$select.addClass("esp-error-input");
 						}
-						loginPages.add(loginPage);
+						loginPages.set(loginPage, $select);
 					});
 
-					// もし重複があれば送信をキャンセル
+					if (hasLoginPageDuplicate) {
+						alert(espAdminData.i18n.alertDuplicateLoginPage);
+						e.preventDefault();
+						return false;
+					}
+
+					// エラー表示のクリア
+					$(document).on("input change", ".esp-error-input", function () {
+						$(this).removeClass("esp-error-input");
+					});
+
 					if (!isValid) {
 						e.preventDefault();
 						return false;
 					}
 
 					// 保存前の確認
-					return confirm(
-						wp.i18n.__("設定を保存してもよろしいですか？", "easy-slug-protect")
-					);
+					if (!confirm(espAdminData.i18n.confirmSave)) {
+						e.preventDefault();
+						return false;
+					}
 				});
 			},
 
@@ -256,10 +331,7 @@
 				// ページ離脱時の警告
 				$(window).on("beforeunload", function () {
 					if (hasUnsavedChanges) {
-						return wp.i18n.__(
-							"未保存の変更があります。このページを離れてもよろしいですか？",
-							"easy-slug-protect"
-						);
+						return espAdminData.i18n.unsavedChanges;
 					}
 				});
 			},

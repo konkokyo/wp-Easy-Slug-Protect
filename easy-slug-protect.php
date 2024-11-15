@@ -3,7 +3,7 @@
  * Plugin Name: Easy Slug Protect
  * Plugin URI: https://github.com/konkokyo/wp-Easy-Slug-Protect
  * Description: URLの階層（スラッグ）ごとにシンプルなパスワード保護を実現するプラグイン
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: takanobu
  * Text Domain: easy-slug-protect
  * Domain Path: /languages
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 }
 
 // プラグインの基本定数を定義
-define('ESP_VERSION', '1.0.0');
+define('ESP_VERSION', '0.1.5');
 define('ESP_PATH', plugin_dir_path(__FILE__));
 define('ESP_URL', plugin_dir_url(__FILE__));
 
@@ -35,7 +35,7 @@ class Easy_Slug_Protect {
 
         // 管理画面の初期化
         if (is_admin()) {
-            new ESP_Admin();
+            new ESP_Admin_page();
         }
     }
 
@@ -51,10 +51,11 @@ class Easy_Slug_Protect {
         require_once ESP_PATH . 'includes/class-esp-logout.php';
         require_once ESP_PATH . 'includes/class-esp-security.php';
         require_once ESP_PATH . 'includes/class-esp-session.php';
+        require_once ESP_PATH . 'includes/class-esp-mail.php';
 
         // 管理画面クラスの読み込み
         if (is_admin()) {
-            require_once ESP_PATH . 'admin/class-esp-admin.php';
+            require_once ESP_PATH . 'admin/classes/class-esp-admin-core.php';
         }
     }
 
