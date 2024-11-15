@@ -22,7 +22,7 @@ easy-slug-protect/
 │
 ├── admin/                      # 管理画面
 │   ├── class-esp-admin.php    # 管理画面クラス
-│   ├──　esp-admin.js       # 管理画面JS
+│   ├── esp-admin.js       # 管理画面JS
 │   │   └──
 │   └── esp-admin.css      # 管理画面CSS
 │

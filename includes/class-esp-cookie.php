@@ -42,13 +42,16 @@ class ESP_Cookie {
      * Cookie設定とリダイレクトを実行
      * 
      * @param string $url リダイレクト先URL
+     * @param bool home_urlを使用して行うか
      * @param bool $safe_redirect wp_safe_redirectを使用するか
      */
-    public function do_redirect($url, $safe_redirect = true) {
+    public function do_redirect($url, $home = true, $safe_redirect = true) {
         // 保留中のCookieがあれば設定
         if ($this->has_pending_cookies()) {
             $this->set_pending_cookies();
         }
+
+        if ($home) $url = home_url($url);
 
         // リダイレクト実行
         if ($safe_redirect) {

@@ -27,12 +27,13 @@
 	display: flex;
 	gap: 0.5em;
 	flex-wrap: wrap;
+	justify-content: space-between;
 }
 
 .esp-path-item {
 	flex: 1;
 	min-width: 38%;
-	max-width: 56%;
+	max-width: 48%;
 	background: #f9f9f9;
 	border: 1px solid #e5e5e5;
 	border-radius: 3px;
@@ -78,6 +79,132 @@
 .esp-path-content select {
 	width: 100%;
 	max-width: 400px;
+}
+
+/* メール通知設定のスタイル */
+.esp-section fieldset {
+	margin: 0;
+	padding: 0;
+	border: none;
+}
+
+.esp-section fieldset label {
+	display: block;
+	margin-bottom: 10px;
+	color: #333;
+}
+
+.esp-section fieldset label:last-child {
+	margin-bottom: 0;
+}
+
+.esp-section fieldset label input[type="checkbox"] {
+	margin-right: 8px;
+}
+
+/* メール設定のグループ化 */
+.esp-notification-group {
+	background: #f9f9f9;
+	border: 1px solid #e5e5e5;
+	border-radius: 3px;
+	padding: 15px;
+	margin-top: 10px;
+}
+
+.esp-notification-group.disabled {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+/* メールアドレス入力欄のスタイル */
+#esp-notify-email {
+	width: 100%;
+	max-width: 400px;
+}
+
+/* メール設定の見出し */
+.esp-notification-heading {
+	font-weight: 600;
+	margin-bottom: 10px;
+	color: #1d2327;
+}
+
+/* 通知項目のスタイル */
+.esp-notification-items {
+	margin-left: 15px;
+}
+
+.esp-notification-items label {
+	display: flex;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.esp-notification-items label input[type="checkbox"] {
+	margin-right: 8px;
+}
+
+/* メール設定の説明文 */
+.esp-mail-description {
+	color: #666;
+	font-style: italic;
+	margin: 5px 0 0;
+	font-size: 13px;
+}
+
+/* 入力ロック */
+.esp-locked-input {
+	background-color: #f0f0f1;
+	cursor: not-allowed;
+	border-color: #dcdcde;
+}
+
+.esp-path-locked-notice {
+	display: block;
+	color: #666;
+	font-style: italic;
+	margin-top: 5px;
+}
+
+/* エラー入力のスタイル */
+.esp-error-input {
+	border-color: #dc3232 !important;
+	box-shadow: 0 0 2px rgba(220, 50, 50, 0.25) !important;
+}
+
+.esp-error-input:focus {
+	border-color: #dc3232 !important;
+	box-shadow: 0 0 2px rgba(220, 50, 50, 0.5) !important;
+}
+
+/* 無効時のスタイル */
+.esp-notifications-disabled .esp-notification-items {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+/* トグルアニメーション */
+.esp-notification-items {
+	transition: opacity 0.3s ease;
+}
+
+/* レスポンシブ対応の追加 */
+@media screen and (max-width: 782px) {
+	.esp-notification-group {
+		padding: 12px;
+	}
+
+	#esp-notify-email {
+		max-width: 100%;
+	}
+
+	.esp-notification-items {
+		margin-left: 0;
+	}
+
+	.esp-notification-items label {
+		padding: 8px 0;
+	}
 }
 
 /* ボタンスタイル */

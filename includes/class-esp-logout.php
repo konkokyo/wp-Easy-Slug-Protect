@@ -88,7 +88,7 @@ class ESP_Logout {
     }
 
     /**
-     * ログアウト処理の実行
+     * ログアウト処理
      */
     public function process_logout() {
         if (!isset($_POST['esp_nonce']) || !wp_verify_nonce($_POST['esp_nonce'], 'esp_logout')) {
@@ -105,11 +105,6 @@ class ESP_Logout {
             // すべてのパスからログアウト
             $this->logout_from_all_paths();
         }
-
-        // リダイレクト実行
-        $redirect_to = isset($_POST['redirect_to']) ? $_POST['redirect_to'] : null;
-        $redirect_url = $this->get_redirect_url($redirect_to);
-        $this->cookie->do_redirect($redirect_url);
     }
 
     /**
@@ -163,74 +158,74 @@ class ESP_Logout {
         $this->cookie->clear_remember_cookies();
     }
 
-    /**
-     * リダイレクトURLの生成
-     * 
-     * @param string|null $redirect_to リダイレクト先のパス
-     * @return string 完全なリダイレクトURL
-     */
-    private function get_redirect_url($redirect_to = null) {
-        // リダイレクト先が指定されていない場合はサイトホームURLを使用
-        if (empty($redirect_to)) {
-            return get_home_url();
-        }
+    // /**
+    //  * リダイレクトURLの生成
+    //  * 
+    //  * @param string|null $redirect_to リダイレクト先のパス
+    //  * @return string 完全なリダイレクトURL
+    //  */
+    // private function get_redirect_url($redirect_to = null) {
+    //     // リダイレクト先が指定されていない場合はサイトホームURLを使用
+    //     if (empty($redirect_to)) {
+    //         return get_home_url();
+    //     }
 
-        // 現在のURLを取得
-        $current_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . 
-            "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
-        $current_path = parse_url($current_url, PHP_URL_PATH);
+    //     // 現在のURLを取得
+    //     $current_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . 
+    //         "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+    //     $current_path = parse_url($current_url, PHP_URL_PATH);
 
-        // WordPressのホームURLを取得
-        $home_url = get_home_url();
-        $home_path = parse_url($home_url, PHP_URL_PATH);
-        $home_path = $home_path ?: '/';
+    //     // WordPressのホームURLを取得
+    //     $home_url = get_home_url();
+    //     $home_path = parse_url($home_url, PHP_URL_PATH);
+    //     $home_path = $home_path ?: '/';
 
-        // リダイレクト先の処理
-        if (strpos($redirect_to, 'http') === 0) {
-            return $redirect_to;
-        } elseif (strpos($redirect_to, '/') === 0) {
-            if ($home_path !== '/') {
-                $redirect_to = rtrim($home_path, '/') . $redirect_to;
-            }
-            return home_url($redirect_to);
-        } else {
-            $current_dir = dirname($current_path);
-            if ($current_dir === '\\' || $current_dir === '/') {
-                $current_dir = '';
-            }
-            $resolved_path = $this->resolve_relative_path($current_dir . '/' . $redirect_to);
+    //     // リダイレクト先の処理
+    //     if (strpos($redirect_to, 'http') === 0) {
+    //         return $redirect_to;
+    //     } elseif (strpos($redirect_to, '/') === 0) {
+    //         if ($home_path !== '/') {
+    //             $redirect_to = rtrim($home_path, '/') . $redirect_to;
+    //         }
+    //         return home_url($redirect_to);
+    //     } else {
+    //         $current_dir = dirname($current_path);
+    //         if ($current_dir === '\\' || $current_dir === '/') {
+    //             $current_dir = '';
+    //         }
+    //         $resolved_path = $this->resolve_relative_path($current_dir . '/' . $redirect_to);
             
-            if ($home_path !== '/') {
-                if (strpos($resolved_path, $home_path) !== 0) {
-                    $resolved_path = rtrim($home_path, '/') . '/' . ltrim($resolved_path, '/');
-                }
-            }
-            return home_url($resolved_path);
-        }
-    }
+    //         if ($home_path !== '/') {
+    //             if (strpos($resolved_path, $home_path) !== 0) {
+    //                 $resolved_path = rtrim($home_path, '/') . '/' . ltrim($resolved_path, '/');
+    //             }
+    //         }
+    //         return home_url($resolved_path);
+    //     }
+    // }
 
-    /**
-     * 相対パスの解決
-     * 
-     * @param string $path 解決する相対パス
-     * @return string 解決された絶対パス
-     */
-    private function resolve_relative_path($path) {
-        $path = str_replace('\\', '/', $path);
-        $parts = array_filter(explode('/', $path), 'strlen');
-        $absolutes = array();
+    // /**
+    //  * 相対パスの解決
+    //  * 
+    //  * @param string $path 解決する相対パス
+    //  * @return string 解決された絶対パス
+    //  */
+    // private function resolve_relative_path($path) {
+    //     $path = str_replace('\\', '/', $path);
+    //     $parts = array_filter(explode('/', $path), 'strlen');
+    //     $absolutes = array();
 
-        foreach ($parts as $part) {
-            if ($part === '.') {
-                continue;
-            }
-            if ($part === '..') {
-                array_pop($absolutes);
-            } else {
-                $absolutes[] = $part;
-            }
-        }
+    //     foreach ($parts as $part) {
+    //         if ($part === '.') {
+    //             continue;
+    //         }
+    //         if ($part === '..') {
+    //             array_pop($absolutes);
+    //         } else {
+    //             $absolutes[] = $part;
+    //         }
+    //     }
 
-        return '/' . implode('/', $absolutes);
-    }
+    //     return '/' . implode('/', $absolutes);
+    // }
 }

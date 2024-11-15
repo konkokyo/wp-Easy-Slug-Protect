@@ -73,6 +73,19 @@ class ESP_Setup {
                 'cookie_prefix' => 'esp'
             ));
         }
+
+        // メール通知設定
+        add_option('esp_mail_settings', array(
+            'enable_notifications' => true,
+            'notify_email' => get_option('admin_email'),
+            'notifications' => array(
+                'new_path' => true,
+                'password_change' => true,
+                'path_remove' => true,
+                'brute_force' => true,
+                'critical_error' => true
+            )
+        ));
     }
 
     public function deactivate() {
