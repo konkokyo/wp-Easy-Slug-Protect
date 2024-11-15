@@ -9,7 +9,7 @@ class ESP_Admin_Assets {
     }
 
     public static function localize_data(){
-        $plugin_name = 'easy-slug-protect';
+        $plugin_name = ESP_Config::TEXT_DOMAIN;
         return array(
             'confirmDelete' => __('この保護パスを削除してもよろしいですか？', $plugin_name),
             'confirmSave' => __('設定を保存してもよろしいですか？', $plugin_name),
