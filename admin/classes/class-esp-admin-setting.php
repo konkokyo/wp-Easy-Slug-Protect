@@ -4,38 +4,9 @@ if (!defined('ABSPATH')) {
 }
 
 class ESP_Settings {
-    /**
-     * 略称から正しい設定名を取得できる定数
-     */
-    const SETTING_NAMES = array(
-        'path'     => 'esp_protected_paths',
-        'brute'    => 'esp_bruteforce_settings',
-        'remember' => 'esp_remember_settings',
-        'mail'     => 'esp_mail_settings'
-    );
-
-    const DEFAULT_SETTINGS = array(
-        'path' => array(),
-        'brute' => array(
-            'attempts_threshold' => 5,  // 試行回数の上限
-            'time_frame' => 10,         // 試行回数のカウント期間（分）
-            'block_time_frame' => 60    // ブロック時間（分）
-        ),
-        'remember' => array(
-            'time_frame' => 15,         // ログイン保持期間（日）
-            'cookie_prefix' => 'esp'    // Cookieのプレフィックス
-        ),
-        'mail' => array(
-            'enable_notifications' => true,
-            'notifications' => array(
-                'new_path' => true,
-                'password_change' => true,
-                'path_remove' => true,
-                'brute_force' => true,
-                'critical_error' => true
-            )
-        )
-    );
+    
+    const SETTING_NAMES = ESP_Config::OPTION_NAMES;
+    const DEFAULT_SETTINGS = ESP_Config::OPTION_DEFAULS;
 
     /**
      * シングルトンインスタンス
@@ -51,6 +22,7 @@ class ESP_Settings {
      * @var ESP_Sanitize サニタイズクラスのインスタンス
      */
     private $sanitize;
+
     /**
      * @var ESP_Mail メールクラスのインスタンス
      */
@@ -131,16 +103,6 @@ class ESP_Settings {
             'default' => self::DEFAULT_SETTINGS['mail']
         ));
 
-    }
-
-    /**
-     * 現在の設定値を取得する
-     * 
-     * @param string 設定名の略称
-     * @return array
-     */
-    public function get_current_setting($key){
-        return get_option(self::SETTING_NAMES[$key], self::DEFAULT_SETTINGS[$key]);
     }
 
     /**

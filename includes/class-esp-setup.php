@@ -19,7 +19,7 @@ class ESP_Setup {
         $charset_collate = $wpdb->get_charset_collate();
 
         // ブルートフォース対策用テーブル
-        $sql1 = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}esp_login_attempts` (
+        $sql1 = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}{ESP_Config::DB_TABLES['brute']}` (
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `ip_address` varchar(45) NOT NULL,
             `path` varchar(255) NOT NULL,
@@ -29,7 +29,7 @@ class ESP_Setup {
         ) {$charset_collate};";
 
         // ログイン保持用テーブル
-        $sql2 = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}esp_login_remember` (
+        $sql2 = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}{ESP_Config::DB_TABLES['remember']}` (
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `path` varchar(255) NOT NULL,
             `user_id` varchar(32) NOT NULL,
@@ -51,41 +51,15 @@ class ESP_Setup {
         }
     }
 
+    /**
+     * コンフィグに基づいてオプション作成
+     */
     private function create_options() {
-        // 保護パス設定
-        if (get_option('esp_protected_paths') === false) {
-            add_option('esp_protected_paths', array());
+        foreach(ESP_Config::OPTION_NAMES as $key => $option_name){
+            if (get_option($option_name) === false) {
+                add_option($option_name, ESP_Config::OPTION_DEFAULTS[$key]);
+            }
         }
-
-        // ブルートフォース対策設定
-        if (get_option('esp_bruteforce_settings') === false) {
-            add_option('esp_bruteforce_settings', array(
-                'attempts_threshold' => 5,  // 試行回数の上限
-                'time_frame' => 10,         // 試行回数のカウント期間（分）
-                'block_time_frame' => 60    // ブロック時間（分）
-            ));
-        }
-
-        // ログイン保持設定
-        if (get_option('esp_remember_settings') === false) {
-            add_option('esp_remember_settings', array(
-                'time_frame' => 15,         // ログイン保持期間（日）
-                'cookie_prefix' => 'esp'
-            ));
-        }
-
-        // メール通知設定
-        add_option('esp_mail_settings', array(
-            'enable_notifications' => true,
-            'notify_email' => get_option('admin_email'),
-            'notifications' => array(
-                'new_path' => true,
-                'password_change' => true,
-                'path_remove' => true,
-                'brute_force' => true,
-                'critical_error' => true
-            )
-        ));
     }
 
     public function deactivate() {
@@ -96,12 +70,12 @@ class ESP_Setup {
         global $wpdb;
         
         // テーブルの削除
-        $wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}esp_login_attempts`");
-        $wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}esp_login_remember`");
-
+        foreach(ESP_Config::DB_TABLES as $table_name){
+            $wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}{$table_name}`");
+        }
         // オプションの削除
-        delete_option('esp_protected_paths');
-        delete_option('esp_bruteforce_settings');
-        delete_option('esp_remember_settings');
+        foreach(ESP_Config::OPTION_NAMES as $option_name){
+            delete_option($option_name);
+        }
     }
 }

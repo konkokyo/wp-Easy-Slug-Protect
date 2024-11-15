@@ -18,7 +18,7 @@ class ESP_Session {
      * シングルトンパターンのためprivate
      */
     private function __construct() {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        if (!is_admin() && !wp_doing_ajax() && session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
         }
     }

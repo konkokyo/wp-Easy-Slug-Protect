@@ -29,10 +29,10 @@ class ESP_Admin_Page {
      * 依存ファイルの読み込み
      */
     private function load_dependencies() {
-        require_once 'class-esp-admin-menu.php';
-        require_once 'class-esp-admin-setting.php';
-        require_once 'class-esp-admin-sanitize.php';
-        require_once 'class-esp-admin-assets.php';
+        require_once ESP_PATH . 'admin/classes/class-esp-admin-menu.php';
+        require_once ESP_PATH . 'admin/classes/class-esp-admin-setting.php';
+        require_once ESP_PATH . 'admin/classes/class-esp-admin-sanitize.php';
+        require_once ESP_PATH . 'admin/classes/class-esp-admin-assets.php';
     }
 
     /**

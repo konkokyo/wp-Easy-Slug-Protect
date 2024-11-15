@@ -24,7 +24,7 @@ class ESP_Sanitize {
         }
 
         $sanitized = array();
-        $existing_paths = get_option(ESP_Settings::SETTING_NAMES['path'], array());
+        $existing_paths = ESP_Option::get_current_setting('path');
         $unique_paths = array(); // 重複チェック用
         $login_pages = array();  // login_pageの重複チェック用
         $raw_passwords = array(); // 平文パスワード一時保存用
@@ -127,7 +127,7 @@ class ESP_Sanitize {
      */
     public function sanitize_mail_settings($settings) {
         if (!is_array($settings)) {
-            return ESP_Settings::DEFAULT_SETTINGS['mail'];
+            return ESP_Cofig::OPTION_DEFAULTS['mail'];
         }
 
         $sanitized_settings = array();

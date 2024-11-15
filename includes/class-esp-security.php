@@ -54,8 +54,8 @@ class ESP_Security {
         }
 
         global $wpdb;
-        $settings = get_option('esp_bruteforce_settings');
-        $table = $wpdb->prefix . 'esp_login_attempts';
+        $settings = ESP_Option::get_current_setting('brute');
+        $table = $wpdb->prefix . ESP_Config::DB_TABLES['brute'];
 
         // 試行回数カウント期間内のレコード数を取得
         $count = $wpdb->get_var($wpdb->prepare(
@@ -106,7 +106,7 @@ class ESP_Security {
 
         // 新規レコードを追加
         $result = $wpdb->insert(
-            $wpdb->prefix . 'esp_login_attempts',
+            $wpdb->prefix . ESP_Config::DB_TABLES['brute'],
             array(
                 'ip_address' => $ip,
                 'path' => $path,
@@ -124,8 +124,8 @@ class ESP_Security {
      */
     public function cleanup_old_attempts() {
         global $wpdb;
-        $settings = get_option('esp_bruteforce_settings');
-        $table = $wpdb->prefix . 'esp_login_attempts';
+        $settings = ESP_Option::get_current_setting('brute');
+        $table = $wpdb->prefix . ESP_Config::DB_TABLES['brute'];
 
         // ブロック時間より古いレコードを削除
         $wpdb->query($wpdb->prepare(

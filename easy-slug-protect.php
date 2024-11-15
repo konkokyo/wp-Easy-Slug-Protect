@@ -52,6 +52,7 @@ class Easy_Slug_Protect {
         require_once ESP_PATH . 'includes/class-esp-security.php';
         require_once ESP_PATH . 'includes/class-esp-session.php';
         require_once ESP_PATH . 'includes/class-esp-mail.php';
+        require_once ESP_PATH . 'includes/class-esp-config.php';
 
         // 管理画面クラスの読み込み
         if (is_admin()) {

@@ -32,11 +32,19 @@ class ESP_Core {
      * @var ESP_Cookie ログアウト処理クラスのインスタンス
      */
     private $cookie;
+    
+    /**
+     * @var ESP_Settings 設定操作クラスのインスタンス
+     */
+    private $settings;
 
     /**
      * コンストラクタ
      */
     public function __construct() {
+        require_once ESP_PATH . 'admin/classes/class-esp-admin-setting.php';
+        $this->settings = ESP_Settings::get_instance();
+
         $this->auth = new ESP_Auth();
         $this->logout = new ESP_Logout();
         $this->security = new ESP_Security();
@@ -81,8 +89,7 @@ class ESP_Core {
 
     /**
      * ショートコードに応じてフロントエンド用のCSSを登録
-     */
-        
+     */        
     public function register_front_styles() {
         global $post;
         if (!is_object($post)) {
@@ -122,7 +129,7 @@ class ESP_Core {
         $current_path = $this->get_current_path();
 
         // 保護対象のパスを取得
-        $protected_paths = get_option('esp_protected_paths', array());
+        $protected_paths = ESP_Option::get_current_setting('path');
 
         // 保護対象のパスかチェック
         $target_path = $this->get_matching_protected_path($current_path, $protected_paths);
@@ -207,7 +214,7 @@ class ESP_Core {
      * @return bool
      */
     private function is_login_page_for_protected_path($page_id) {
-        $protected_paths = get_option('esp_protected_paths', array());
+        $protected_paths = ESP_Option::get_current_setting('path');
         foreach ($protected_paths as $path_setting) {
             if ($path_setting['login_page'] == $page_id) {
                 return $path_setting;
@@ -224,7 +231,7 @@ class ESP_Core {
     private function handle_login_request($path_settings) {
         // CSRFチェック
         if (!isset($_POST['esp_nonce']) || !$this->security->verify_nonce($_POST['esp_nonce'], $path_settings['path'])) {
-            $this->session->set_error(__('不正なリクエストです。', 'easy-slug-protect'));
+            $this->session->set_error(__('不正なリクエストです。', ESP_Config::TEXT_DOMAIN));
             $this->redirect_to_login_page($path_settings);
             return;
         }
@@ -357,7 +364,7 @@ class ESP_Core {
         $lock_path = $atts['path'] ? '/' . trim($atts['path'], '/') . '/' : null;
 
         // 保護パス設定から対応するパスを検索
-        $protected_paths = get_option('esp_protected_paths', array());
+        $protected_paths = ESP_Option::get_current_setting('path');
         $target_path = null;
 
         foreach ($protected_paths as $path) {
@@ -401,7 +408,7 @@ class ESP_Core {
             $this->logout->process_logout();
             // リダイレクト実行
             $redirect_to = $this->get_redirect_to();
-            $this->cookie->do_redirect($redirect_url);
+            $this->cookie->do_redirect($redirect_to);
         }
     }
 

@@ -24,6 +24,8 @@ class ESP_Auth {
      */
     private $cookie;
 
+    private $text_domain;
+
     /**
      * コンストラクタ
      */
@@ -31,12 +33,14 @@ class ESP_Auth {
         $this->security = new ESP_Security();
         $this->session = ESP_Session::get_instance();
         $this->cookie = ESP_Cookie::get_instance();
+        $text_domain = ESP_Config::TEXT_DOMAIN;
     }
 
     /**
      * ログインフォームの生成
      * 
      * @param string $path 保護対象のパス
+     * @param string $redirect_to リダイレクト先のURL(基本はパス)
      * @return string HTML形式のログインフォーム
      */
     public function get_login_form($path, $redirect_to) {
@@ -59,20 +63,20 @@ class ESP_Auth {
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($redirect_to) ?>">
                 
                 <div class="esp-form-group">
-                    <label for="esp-password"><?php _e('パスワード:', 'easy-slug-protect'); ?></label>
+                    <label for="esp-password"><?php _e('パスワード:', $text_domain); ?></label>
                     <input type="password" name="esp_password" id="esp-password" required>
                 </div>
 
                 <div class="esp-form-group">
                     <label>
                         <input type="checkbox" name="esp_remember" value="1">
-                        <?php _e('ログインを記憶する', 'easy-slug-protect'); ?>
+                        <?php _e('ログインを記憶する', $text_domain); ?>
                     </label>
                 </div>
 
                 <div class="esp-form-group">
                     <button type="submit" class="esp-submit">
-                        <?php _e('ログイン', 'easy-slug-protect'); ?>
+                        <?php _e('ログイン', $text_domain); ?>
                     </button>
                 </div>
             </form>
@@ -95,7 +99,7 @@ class ESP_Auth {
             return false;
         }
 
-        $protected_paths = get_option('esp_protected_paths', array());
+        $protected_paths = ESP_Option::get_current_setting('path');
         $path_settings = null;
         
         foreach ($protected_paths as $protected_path) {
@@ -149,12 +153,12 @@ class ESP_Auth {
         $user_id = wp_generate_password(32, false);
         $token = wp_generate_password(64, false);
         
-        $remember_settings = get_option('esp_remember_settings');
+        $remember_settings = ESP_Option::get_current_setting('remember');
         $expires = time() + (DAY_IN_SECONDS * $remember_settings['time_frame']);
 
         // DBに保存
         $wpdb->insert(
-            $wpdb->prefix . 'esp_login_remember',
+            $wpdb->prefix . ESP_Config::DB_TABLES['remember'],
             array(
                 'path' => $path,
                 'token' => $token,
@@ -200,7 +204,7 @@ class ESP_Auth {
         }
 
         $login_info = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}esp_login_remember 
+            "SELECT * FROM {$wpdb->prefix}{ESP_Config::DB_TABLES['remember']}
             WHERE user_id = %s 
             AND token = %s 
             AND path = %s 
@@ -229,12 +233,12 @@ class ESP_Auth {
     private function refresh_remember_login($path, $id, $user_id, $token) {
         global $wpdb;
         
-        $remember_settings = get_option('esp_remember_settings');
+        $remember_settings = ESP_Option::get_current_setting('remember');
         $expires = time() + (DAY_IN_SECONDS * $remember_settings['time_frame']);
 
         // データベースの有効期限を更新
         $wpdb->update(
-            $wpdb->prefix . 'esp_login_remember',
+            $wpdb->prefix . ESP_Config::DB_TABLES['remember'],
             array('expires' => date('Y-m-d H:i:s', $expires)),
             array('id' => $id),
             array('%s'),

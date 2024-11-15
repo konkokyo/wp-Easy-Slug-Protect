@@ -1,4 +1,7 @@
 <?php
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 /**
  * メール通知を管理するクラス
@@ -34,20 +37,10 @@ class ESP_Mail {
      * @return bool 通知が有効な場合はtrue
      */
     private function is_notification_enabled($type) {
-        $settings = get_option('esp_mail_settings');
+        $settings = ESP_Option::get_current_setting('mail');
         return $settings['enable_notifications'] && 
                isset($settings['notifications'][$type]) && 
                $settings['notifications'][$type];
-    }
-
-    /**
-     * 通知先メールアドレスを取得
-     * 
-     * @return string メールアドレス
-     */
-    private function get_notification_email() {
-        $settings = get_option('esp_mail_settings');
-        return $settings['notify_email'];
     }
 
     /**
@@ -77,7 +70,7 @@ class ESP_Mail {
      */
     private function send_mail($subject, $message) {
         // メール通知が無効な場合は送信しない
-        $settings = get_option('esp_mail_settings');
+        $settings = ESP_Option::get_current_setting('mail');
         if (!$settings['enable_notifications']) {
             return false;
         }

@@ -14,7 +14,7 @@ class ESP_Logout {
     private $session;
 
     /**
-     * @var ESP_Session cookie管理クラスのインスタンス
+     * @var ESP_Cookie cookie管理クラスのインスタンス
      */
     private $cookie;
 
@@ -35,7 +35,7 @@ class ESP_Logout {
     public function get_logout_button($atts = array()) {
         $atts = shortcode_atts(array(
             'redirect_to' => '',
-            'text' => __('ログアウト', 'easy-slug-protect'),
+            'text' => __('ログアウト', ESP_Config::TEXT_DOMAIN),
             'class' => 'esp-logout-button',
             'path' => null  // ログアウト対象のパスを指定可能に
         ), $atts);
@@ -76,7 +76,7 @@ class ESP_Logout {
      */
     private function is_any_path_logged_in() {
         $auth = new ESP_Auth();
-        $protected_paths = get_option('esp_protected_paths', array());
+        $protected_paths = ESP_Option::get_current_setting('path');
         
         foreach ($protected_paths as $path) {
             if ($auth->is_logged_in($path['path'])) {
@@ -92,7 +92,7 @@ class ESP_Logout {
      */
     public function process_logout() {
         if (!isset($_POST['esp_nonce']) || !wp_verify_nonce($_POST['esp_nonce'], 'esp_logout')) {
-            wp_die(__('不正なリクエストです。', 'easy-slug-protect'));
+            wp_die(__('不正なリクエストです。', ESP_Config::TEXT_DOMAIN));
         }
 
         // ログアウト対象のパスを取得
@@ -121,7 +121,7 @@ class ESP_Logout {
         if ($cookie_data) {
             global $wpdb;
             $wpdb->delete(
-                $wpdb->prefix . 'esp_login_remember',
+                $wpdb->prefix . ESP_Config::DB_TABLES['remember'],
                 array(
                     'user_id' => $cookie_data['id'],
                     'path' => $path
@@ -138,7 +138,7 @@ class ESP_Logout {
      * 全てのページからログアウトさせる
      */
     private function logout_from_all_paths() {
-        $protected_paths = get_option('esp_protected_paths', array());
+        $protected_paths = ESP_Option::get_current_setting('path');
         foreach ($protected_paths as $path) {
             $this->logout_from_path($path['path']);
         }
@@ -149,7 +149,7 @@ class ESP_Logout {
      */
     private function prepare_clear_cookies() {
         // セッションCookieのクリア
-        $protected_paths = get_option('esp_protected_paths', array());
+        $protected_paths = ESP_Option::get_current_setting('path');
         foreach ($protected_paths as $path) {
             $this->cookie->clear_session_cookie($path['path']);
         }
