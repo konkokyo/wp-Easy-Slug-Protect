@@ -10,12 +10,9 @@ class ESP_Admin_Menu {
      */
     private $settings;
 
-    private $text_domain;
-
     public function __construct() {
         add_action('admin_menu', [$this, 'add_admin_menu']);
         $this->settings = ESP_Settings::get_instance();
-        $text_domain = ESP_Config::TEXT_DOMAIN;
     }
 
     public function add_admin_menu() {
@@ -32,12 +29,11 @@ class ESP_Admin_Menu {
 
     public function render_settings_page() {
         
-        $opstion_defaults = ESP_Config::OPTION_DEFAULTS;
-        // 現在の設定値を取得（デフォルト値を指定）
-        $protected_paths = $opstion_defaults('path');
-        $bruteforce_settings = $opstion_defaults('brute');
-        $remember_settings = $opstion_defaults('remember');
-        $mail_settings = $opstion_defaults('mail');
+        // 現在の設定値を取得
+        $protected_paths = ESP_Option::get_current_setting('path');
+        $bruteforce_settings = ESP_Option::get_current_setting('brute');
+        $remember_settings = ESP_Option::get_current_setting('remember');
+        $mail_settings =  ESP_Option::get_current_setting('mail');
 
         $option_names = ESP_Config::OPTION_NAMES;
         // 設定名を取得
@@ -45,6 +41,8 @@ class ESP_Admin_Menu {
         $brute_setting_name = $option_names['brute'];
         $remember_setting_name = $option_names['remember'];
         $mail_setting_name = $option_names['mail'];
+
+        $text_domain = ESP_Config::TEXT_DOMAIN;
 
         ?>
         <div class="wrap">
@@ -247,16 +245,6 @@ class ESP_Admin_Menu {
                                             <?php checked(isset($notifications['path_remove']) && $notifications['path_remove']); ?>
                                             <?php disabled(!$mail_settings['enable_notifications']); ?>>
                                         <?php _e('保護パスの削除', $text_domain); ?>
-                                    </label>
-                                    <br>
-                                    
-                                    <label <?php echo !$mail_settings['enable_notifications'] ? 'class="esp-disabled"' : ''; ?>>
-                                        <input type="checkbox" 
-                                            name="<?php echo $mail_setting_name; ?>[notifications][brute_force]"
-                                            value="1"
-                                            <?php checked(isset($notifications['brute_force']) && $notifications['brute_force']); ?>
-                                            <?php disabled(!$mail_settings['enable_notifications']); ?>>
-                                        <?php _e('ブルートフォース攻撃の検知', $text_domain); ?>
                                     </label>
                                     <br>
                                     

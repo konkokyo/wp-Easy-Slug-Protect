@@ -32,7 +32,7 @@ class ESP_Config {
                 'new_path' => true,
                 'password_change' => true,
                 'path_remove' => true,
-                'brute_force' => true,
+                'brute_force' => false,
                 'critical_error' => true
             )
         )

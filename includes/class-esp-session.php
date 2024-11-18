@@ -74,6 +74,14 @@ class ESP_Session {
     }
 
     /**
+     * エラーメッセージの削除
+     * 
+     */
+    public function del_error(){
+        $this->delete('error');
+    }
+
+    /**
      * エラーメッセージの取得
      * 
      * @return string|null エラーメッセージ

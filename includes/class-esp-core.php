@@ -95,7 +95,7 @@ class ESP_Core {
         if (
             strpos($content, '[esp_login_form') !== false || 
             strpos($content, '[esp_logout_button') !== false ||
-            $this->is_login_page_for_protected_path($post->ID)
+            $this->is_login_page($post->ID)
         ) {
             wp_enqueue_style(
                 'esp-front-styles',
@@ -127,13 +127,8 @@ class ESP_Core {
         // 保護対象のパスかチェック
         $target_path = $this->get_matching_protected_path($current_path, $protected_paths);
 
-        // 現在のページがログインページかチェック
-        $is_login_page = $this->is_login_page_for_protected_path($post->ID);
-
-        // 保護対象でもログインページでもない場合は処理終了
-        if (!$target_path && !$is_login_page) {
-            return;
-        }
+        // 現在のページがログインページかチェックし設定取得
+        $is_login_page = $this->is_login_page($post->ID);
 
         // POSTリクエストの場合はログイン処理を優先
         if (isset($_POST['esp_password'])) {
@@ -141,8 +136,8 @@ class ESP_Core {
             return;
         }
 
-        // ログインページの場合は処理終了（フォームを表示）
-        if ($is_login_page) {
+        // ログインページもしくは保護対象でない場合は処理終了
+        if ($is_login_page || !$target_path) {
             return;
         }
 
@@ -204,9 +199,9 @@ class ESP_Core {
      * 指定されたページIDがいずれかの保護パスのログインページとして設定されているか確認
      * 
      * @param int $page_id ページID
-     * @return bool
+     * @return array ログインページで無い場合false
      */
-    private function is_login_page_for_protected_path($page_id) {
+    private function is_login_page($page_id) {
         $protected_paths = ESP_Option::get_current_setting('path');
         foreach ($protected_paths as $path_setting) {
             if ($path_setting['login_page'] == $page_id) {
@@ -219,7 +214,7 @@ class ESP_Core {
     /**
      * ログインリクエストの処理
      * 
-     * @param array $path_settings パスの設定
+     * @param array $path_settings ターゲットパスの設定
      */
     private function handle_login_request($path_settings) {
         // CSRFチェック
@@ -234,7 +229,9 @@ class ESP_Core {
 
         // ログイン処理
         $password = isset($_POST['esp_password']) ? $_POST['esp_password'] : '';
-        if ($this->auth->process_login($path_settings['path'], $password)) {
+        if ($this->auth->process_login($path_settings, $password)) {
+            // エラー削除しておく
+            $this->session->del_error();
             // ログイン成功時は元のページへリダイレクト（cookieクラス使用でcookie適用させる）
             $this->cookie->do_redirect($redirect_to);
         }
@@ -419,10 +416,6 @@ class ESP_Core {
             WHERE expires < NOW()"
         );
 
-        // 期限切れのCookieも削除
-        if ($remember_cookies = $this->cookie->get_remember_cookies()) {
-            $this->cookie->clear_remember_cookies();
-        }
     }
 
 }

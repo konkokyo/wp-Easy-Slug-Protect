@@ -32,11 +32,6 @@ class Easy_Slug_Protect {
 
         // プラグインの初期化
         $this->init();
-
-        // 管理画面の初期化
-        if (is_admin()) {
-            new ESP_Admin_page();
-        }
     }
 
     /**
@@ -53,6 +48,7 @@ class Easy_Slug_Protect {
         require_once ESP_PATH . 'includes/class-esp-session.php';
         require_once ESP_PATH . 'includes/class-esp-mail.php';
         require_once ESP_PATH . 'includes/class-esp-config.php';
+        require_once ESP_PATH . 'includes/class-esp-option.php';
 
         // 管理画面クラスの読み込み
         if (is_admin()) {
@@ -64,12 +60,16 @@ class Easy_Slug_Protect {
      * プラグインの初期化
      */
     private function init() {
-        // セッション管理の初期化
-        ESP_Session::get_instance();
-
-        // コア機能の初期化
-        $core = new ESP_Core();
-        $core->init();
+        if (is_admin()) {
+            // 管理画面の初期化
+            new ESP_Admin_page();
+        } else {
+            // セッション管理の初期化
+            ESP_Session::get_instance();
+            // コア機能の初期化
+            $core = new ESP_Core();
+            $core->init();
+        }
 
         // 言語ファイルの読み込み
         add_action('plugins_loaded', array($this, 'load_textdomain'));

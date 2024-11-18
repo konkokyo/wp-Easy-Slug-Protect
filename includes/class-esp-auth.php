@@ -33,7 +33,7 @@ class ESP_Auth {
         $this->security = new ESP_Security();
         $this->session = ESP_Session::get_instance();
         $this->cookie = ESP_Cookie::get_instance();
-        $text_domain = ESP_Config::TEXT_DOMAIN;
+        $this->text_domain = ESP_Config::TEXT_DOMAIN;
     }
 
     /**
@@ -63,69 +63,60 @@ class ESP_Auth {
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($redirect_to) ?>">
                 
                 <div class="esp-form-group">
-                    <label for="esp-password"><?php _e('パスワード:', $text_domain); ?></label>
+                    <label for="esp-password"><?php _e('パスワード:', $this->text_domain); ?></label>
                     <input type="password" name="esp_password" id="esp-password" required>
                 </div>
 
                 <div class="esp-form-group">
                     <label>
                         <input type="checkbox" name="esp_remember" value="1">
-                        <?php _e('ログインを記憶する', $text_domain); ?>
+                        <?php _e('ログインを記憶する', $this->text_domain); ?>
                     </label>
                 </div>
 
                 <div class="esp-form-group">
                     <button type="submit" class="esp-submit">
-                        <?php _e('ログイン', $text_domain); ?>
+                        <?php _e('ログイン', $this->text_domain); ?>
                     </button>
                 </div>
             </form>
         </div>
         <?php
+        $this->session->del_error();
         return ob_get_clean();
     }
 
     /**
      * ログイン処理
      * 
-     * @param string $path 保護対象のパス
+     * @param string $path_settings ターゲットのパス設定
      * @param string $password 入力されたパスワード
      * @return bool ログイン成功ならtrue
      */
-    public function process_login($path, $password) {
-        // ブルートフォース対策のチェック
-        if (!$this->security->can_try_login($path)) {
-            $this->session->set_error(__('試行回数が制限を超えました。しばらく時間をおいてお試しください。', 'easy-slug-protect'));
+    public function process_login($path_settings, $password) {
+        if (!$path_settings) {
+            $this->session->set_error(__('無効なリクエストです。', $this->text_domain));
             return false;
         }
 
-        $protected_paths = ESP_Option::get_current_setting('path');
-        $path_settings = null;
-        
-        foreach ($protected_paths as $protected_path) {
-            if ($protected_path['path'] === $path) {
-                $path_settings = $protected_path;
-                break;
-            }
-        }
-
-        if (!$path_settings) {
-            $this->session->set_error(__('無効なリクエストです。', 'easy-slug-protect'));
+        // ブルートフォース対策のチェック
+        if (!$this->security->can_try_login($path_settings['path'])) {
+            $this->session->set_error(__('試行回数が制限を超えました。しばらく時間をおいてお試しください。', $this->text_domain));
             return false;
         }
 
         if (!wp_check_password($password, $path_settings['password'])) {
-            $this->security->record_failed_attempt($path);
-            $this->session->set_error(__('パスワードが正しくありません。', 'easy-slug-protect'));
+            $this->security->record_failed_attempt($path_settings['path']);
+            $this->session->set_error(__('パスワードが正しくありません。', $this->text_domain));
             return false;
         }
 
         // ログイン成功時の処理
         $remember = isset($_POST['esp_remember']) && $_POST['esp_remember'];
         if ($remember) {
-            $this->set_remember_login($path);
+            $this->set_remember_login($path_settings['path']);
         } else {
-            $this->set_session_login($path);
+            $this->set_session_login($path_settings['path']);
         }
 
         return true;
@@ -203,8 +194,9 @@ class ESP_Auth {
             return false;
         }
 
+        $table = $wpdb->prefix . ESP_Config::DB_TABLES['remember'];
         $login_info = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}{ESP_Config::DB_TABLES['remember']}
+            "SELECT * FROM $table
             WHERE user_id = %s 
             AND token = %s 
             AND path = %s 

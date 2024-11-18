@@ -22,8 +22,11 @@ class ESP_Setup {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
 
+        $table_brute = $wpdb->prefix . ESP_Config::DB_TABLES['brute'];
+        $table_remember = $wpdb->prefix . ESP_Config::DB_TABLES['remember'];
+
         // ブルートフォース対策用テーブル
-        $sql1 = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}{ESP_Config::DB_TABLES['brute']}` (
+        $sql1 = "CREATE TABLE IF NOT EXISTS `{$table_brute}` (
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `ip_address` varchar(45) NOT NULL,
             `path` varchar(255) NOT NULL,
@@ -33,7 +36,7 @@ class ESP_Setup {
         ) {$charset_collate};";
 
         // ログイン保持用テーブル
-        $sql2 = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}{ESP_Config::DB_TABLES['remember']}` (
+        $sql2 = "CREATE TABLE IF NOT EXISTS `{$table_remember}` (
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `path` varchar(255) NOT NULL,
             `user_id` varchar(32) NOT NULL,
@@ -75,7 +78,8 @@ class ESP_Setup {
         
         // テーブルの削除
         foreach(ESP_Config::DB_TABLES as $table_name){
-            $wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}{$table_name}`");
+            $table = $wpdb->prefix . $table_name;
+            $wpdb->query("DROP TABLE IF EXISTS `{$table}`");
         }
         // オプションの削除
         foreach(ESP_Config::OPTION_NAMES as $option_name){
