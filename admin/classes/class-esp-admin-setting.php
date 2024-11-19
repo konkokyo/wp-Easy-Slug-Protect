@@ -56,18 +56,8 @@ class ESP_Settings {
             return;
         }
 
-        // 設定の登録
         add_action('admin_init', [$this, 'register_settings']);
-
-        // 各設定値が更新されたときの処理を登録
-        foreach (self::SETTING_NAMES as $short_name => $setting_name) {
-            add_action("update_option_{$setting_name}", function ($old_value, $value) use ($short_name) {
-                $function_name = 'handle_update_' . $short_name;
-                if (method_exists($this, $function_name)) {
-                    call_user_func([$this, $function_name], $old_value, $value);
-                }
-            }, 10, 2);
-        }
+        add_action('update_option_' . ESP_Config::OPTION_KEY, [$this, 'handle_settings_update'], 10, 2);
 
         self::$initialized = true;
     }
@@ -76,35 +66,65 @@ class ESP_Settings {
      * 設定の登録
      */
     public function register_settings() {
-        // 保護パスの設定
-        register_setting('esp_settings', self::SETTING_NAMES['path'], array(
-            'type' => 'array',
-            'sanitize_callback' => array($this->sanitize, 'sanitize_protected_paths')
-        ));
-
-        // ブルートフォース対策の設定
-        register_setting('esp_settings', self::SETTING_NAMES['brute'], array(
-            'type' => 'array',
-            'sanitize_callback' => array($this->sanitize, 'sanitize_bruteforce_settings'),
-            'default' => self::DEFAULT_SETTINGS['brute']
-        ));
-
-        // ログイン保持の設定
-        register_setting('esp_settings', self::SETTING_NAMES['remember'], array(
-            'type' => 'array',
-            'sanitize_callback' => array($this->sanitize, 'sanitize_remember_settings'),
-            'default' => self::DEFAULT_SETTINGS['remember']
-        ));
-
-        // メール通知の設定
-        register_setting('esp_settings', self::SETTING_NAMES['mail'], array(
-            'type' => 'array',
-            'sanitize_callback' => array($this->sanitize, 'sanitize_mail_settings'),
-            'default' => self::DEFAULT_SETTINGS['mail']
-        ));
-
+        register_setting(
+            'esp_settings_group',
+            ESP_Config::OPTION_KEY,
+            array(
+                'type' => 'array',
+                'sanitize_callback' => [$this, 'sanitize_settings'],
+                'default' => ESP_Config::OPTION_DEFAULTS
+            )
+        );
     }
 
+    /**
+     * 
+     */
+    public function sanitize_settings($input) {
+        $sanitized = array();
+        
+        // パス設定のサニタイズ
+        $sanitized['path'] = $this->sanitize->sanitize_protected_paths(
+            isset($input['path']) ? $input['path'] : ESP_Option::get_current_setting('path')
+        );
+        error_log('esp: '.  json_encode($sanitized));
+
+        // ブルートフォース設定のサニタイズ
+        $sanitized['brute'] = $this->sanitize->sanitize_bruteforce_settings(
+            isset($input['brute']) ? $input['brute'] : ESP_Option::get_current_setting('brute')
+        );
+        error_log('esp: '.  json_encode($sanitized));
+
+        // ログイン保持設定のサニタイズ
+        $sanitized['remember'] = $this->sanitize->sanitize_remember_settings(
+            isset($input['remember']) ? $input['remember'] : ESP_Option::get_current_setting('remember')
+        );
+        error_log('esp: '.  json_encode($sanitized));
+
+        // メール設定のサニタイズ
+        $sanitized['mail'] = $this->sanitize->sanitize_mail_settings(
+            isset($input['mail']) ? $input['mail'] : ESP_Option::get_current_setting('mail')
+        );
+
+        return $sanitized;
+    }
+
+    /**
+     * ハンドラーへのハンドラー
+     */
+    public function handle_settings_update($old_value, $value) {
+        // パス設定の変更を処理
+        if (isset($value['path'])) {
+            $this->handle_update_path(
+                $old_value['path'] ?? array(),
+                $value['path']
+            );
+        }
+
+        // 現状他は不要
+        return;
+    }
+    
     /**
      * パス設定が変更された時のハンドラー
      * 

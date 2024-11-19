@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
 
 class ESP_Config {
     const TEXT_DOMAIN = 'easy-slug-protect';
+    const OPTION_KEY = 'esp_settings';
 
     // 略称から正しい設定名を取得できる定数
     const OPTION_NAMES = array(

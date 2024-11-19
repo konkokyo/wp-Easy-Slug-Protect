@@ -28,28 +28,26 @@ class ESP_Admin_Menu {
     }
 
     public function render_settings_page() {
-        
+
         // 現在の設定値を取得
         $protected_paths = ESP_Option::get_current_setting('path');
         $bruteforce_settings = ESP_Option::get_current_setting('brute');
         $remember_settings = ESP_Option::get_current_setting('remember');
         $mail_settings =  ESP_Option::get_current_setting('mail');
 
-        $option_names = ESP_Config::OPTION_NAMES;
-        // 設定名を取得
-        $path_setting_name = $option_names['path'];
-        $brute_setting_name = $option_names['brute'];
-        $remember_setting_name = $option_names['remember'];
-        $mail_setting_name = $option_names['mail'];
-
         $text_domain = ESP_Config::TEXT_DOMAIN;
+        $option_key = ESP_Config::OPTION_KEY
 
         ?>
         <div class="wrap">
             <h1><?php _e('Easy Slug Protect 設定', $text_domain); ?></h1>
 
             <form method="post" action="options.php" id="esp-settings-form">
-                <?php settings_fields('esp_settings'); ?>
+                <?php settings_fields('esp_settings_group'); ?>
+                <input type="hidden" name="option_page" value="esp_settings_group">
+                <input type="hidden" name="action" value="update">
+                <?php wp_nonce_field('esp_settings_group-options', '_wpnonce', false); ?>
+                <input type="hidden" name="<?php echo $option_key; ?>[initialized]" value="1">
 
                 <!-- 保護パスの設定セクション -->
                 <div class="esp-section">
@@ -69,7 +67,7 @@ class ESP_Admin_Menu {
                                         <p>
                                             <label><?php _e('パス:', $text_domain); ?></label>
                                             <input type="text" 
-                                                name="<?php echo $path_setting_name; ?>[<?php echo $index; ?>][path]" 
+                                                name="<?php echo $option_key; ?>[path][<?php echo $index; ?>][path]" 
                                                 value="<?php echo esc_attr($path['path']); ?>"
                                                 class="regular-text"
                                                 placeholder="/example/"
@@ -78,7 +76,7 @@ class ESP_Admin_Menu {
                                         <p>
                                             <label><?php _e('パスワード:', $text_domain); ?></label>
                                             <input type="password" 
-                                                name="<?php echo $path_setting_name; ?>[<?php echo $index; ?>][password]" 
+                                                name="<?php echo $option_key; ?>[path][<?php echo $index; ?>][password]" 
                                                 class="regular-text"
                                                 placeholder="<?php _e('変更する場合のみ入力', $text_domain); ?>">
                                             <span class="description">
@@ -89,7 +87,7 @@ class ESP_Admin_Menu {
                                             <label><?php _e('ログインページ:', $text_domain); ?></label>
                                             <?php 
                                             wp_dropdown_pages(array(
-                                                'name' => "{$path_setting_name}[{$index}][login_page]",
+                                                'name' => "{$option_key}[path][{$index}][login_page]",
                                                 'selected' => $path['login_page'],
                                                 'show_option_none' => __('選択してください', $text_domain),
                                                 'option_none_value' => '0'
@@ -119,7 +117,7 @@ class ESP_Admin_Menu {
                             <td>
                                 <input type="number" 
                                     id="esp-attempts-threshold"
-                                    name="<?php echo $brute_setting_name; ?>[attempts_threshold]"
+                                    name="<?php echo $option_key; ?>[brute][attempts_threshold]"
                                     value="<?php echo esc_attr($bruteforce_settings['attempts_threshold']); ?>"
                                     min="1"
                                     required>
@@ -137,7 +135,7 @@ class ESP_Admin_Menu {
                             <td>
                                 <input type="number" 
                                     id="esp-time-frame"
-                                    name="<?php echo $brute_setting_name; ?>[time_frame]"
+                                    name="<?php echo $option_key; ?>[brute][time_frame]"
                                     value="<?php echo esc_attr($bruteforce_settings['time_frame']); ?>"
                                     min="1"
                                     required>
@@ -153,7 +151,7 @@ class ESP_Admin_Menu {
                             <td>
                                 <input type="number" 
                                     id="esp-block-time-frame"
-                                    name="<?php echo $brute_setting_name; ?>[block_time_frame]"
+                                    name="<?php echo $option_key; ?>[brute][block_time_frame]"
                                     value="<?php echo esc_attr($bruteforce_settings['block_time_frame']); ?>"
                                     min="1"
                                     required>
@@ -176,7 +174,7 @@ class ESP_Admin_Menu {
                             <td>
                                 <input type="number" 
                                     id="esp-remember-time"
-                                    name="<?php echo $remember_setting_name; ?>[time_frame]"
+                                    name="<?php echo $option_key; ?>[remember][time_frame]"
                                     value="<?php echo esc_attr($remember_settings['time_frame']); ?>"
                                     min="1"
                                     required>
@@ -199,7 +197,7 @@ class ESP_Admin_Menu {
                                 <label>
                                     <input type="checkbox" 
                                         id="esp-enable-notifications"
-                                        name="<?php echo $mail_setting_name; ?>[enable_notifications]"
+                                        name="<?php echo $option_key; ?>[mail][enable_notifications]"
                                         value="1"
                                         <?php checked($mail_settings['enable_notifications']); ?>>
                                     <?php _e('メール通知を有効にする', $text_domain); ?>
@@ -220,7 +218,7 @@ class ESP_Admin_Menu {
                                     
                                     <label <?php echo !$mail_settings['enable_notifications'] ? 'class="esp-disabled"' : ''; ?>>
                                         <input type="checkbox" 
-                                            name="<?php echo $mail_setting_name; ?>[notifications][new_path]"
+                                            name="<?php echo $option_key; ?>[mail][notifications][new_path]"
                                             value="1"
                                             <?php checked(isset($notifications['new_path']) && $notifications['new_path']); ?>
                                             <?php disabled(!$mail_settings['enable_notifications']); ?>>
@@ -230,7 +228,7 @@ class ESP_Admin_Menu {
                                     
                                     <label <?php echo !$mail_settings['enable_notifications'] ? 'class="esp-disabled"' : ''; ?>>
                                         <input type="checkbox" 
-                                            name="<?php echo $mail_setting_name; ?>[notifications][password_change]"
+                                            name="<?php echo $option_key; ?>[mail][notifications][password_change]"
                                             value="1"
                                             <?php checked(isset($notifications['password_change']) && $notifications['password_change']); ?>
                                             <?php disabled(!$mail_settings['enable_notifications']); ?>>
@@ -240,7 +238,7 @@ class ESP_Admin_Menu {
                                     
                                     <label <?php echo !$mail_settings['enable_notifications'] ? 'class="esp-disabled"' : ''; ?>>
                                         <input type="checkbox" 
-                                            name="<?php echo $mail_setting_name; ?>[notifications][path_remove]"
+                                            name="<?php echo $option_key; ?>[mail][notifications][path_remove]"
                                             value="1"
                                             <?php checked(isset($notifications['path_remove']) && $notifications['path_remove']); ?>
                                             <?php disabled(!$mail_settings['enable_notifications']); ?>>
@@ -250,7 +248,7 @@ class ESP_Admin_Menu {
                                     
                                     <label <?php echo !$mail_settings['enable_notifications'] ? 'class="esp-disabled"' : ''; ?>>
                                         <input type="checkbox" 
-                                            name="<?php echo $mail_setting_name; ?>[notifications][critical_error]"
+                                            name="<?php echo $option_key; ?>[mail][notifications][critical_error]"
                                             value="1"
                                             <?php checked(isset($notifications['critical_error']) && $notifications['critical_error']); ?>
                                             <?php disabled(!$mail_settings['enable_notifications']); ?>>
