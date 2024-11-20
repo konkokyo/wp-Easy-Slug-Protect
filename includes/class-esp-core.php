@@ -64,11 +64,6 @@ class ESP_Core {
         add_shortcode('esp_login_form', [$this, 'render_login_form']);
         add_shortcode('esp_logout_button', [$this, 'render_logout_button']);
 
-        // WP-Cronのスケジュール設定
-        if (!wp_next_scheduled('esp_daily_cleanup')) {
-            wp_schedule_event(time(), 'daily', 'esp_daily_cleanup');
-        }
-        add_action('esp_daily_cleanup', [$this, 'daily_cleanup']);
     }
 
     /**
@@ -84,26 +79,12 @@ class ESP_Core {
      * ショートコードに応じてフロントエンド用のCSSを登録
      */        
     public function register_front_styles() {
-        global $post;
-        if (!is_object($post)) {
-            return;
-        }
-
-        $content = $post->post_content;
-        
-        // ショートコードが含まれているか確認
-        if (
-            strpos($content, '[esp_login_form') !== false || 
-            strpos($content, '[esp_logout_button') !== false ||
-            $this->is_login_page($post->ID)
-        ) {
-            wp_enqueue_style(
-                'esp-front-styles',
-                ESP_URL . 'front/esp-styles.css',
-                array(),
-                ESP_VERSION
-            );
-        }
+        wp_enqueue_style(
+            'esp-front-styles',
+            ESP_URL . 'front/esp-styles.css',
+            array(),
+            ESP_VERSION
+        );
     }
 
     /**
@@ -400,22 +381,6 @@ class ESP_Core {
             $redirect_to = $this->get_redirect_to();
             $this->cookie->do_redirect($redirect_to);
         }
-    }
-
-    /**
-     * 古いデータのクリーンアップ
-     * WP-Cronで実行
-     */
-    public function daily_cleanup() {
-        $this->security->cleanup_old_attempts();
-        
-        global $wpdb;
-        // 期限切れのログイン保持情報を削除
-        $wpdb->query(
-            "DELETE FROM {$wpdb->prefix}esp_login_remember 
-            WHERE expires < NOW()"
-        );
-
     }
 
 }

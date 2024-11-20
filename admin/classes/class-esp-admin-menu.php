@@ -42,6 +42,48 @@ class ESP_Admin_Menu {
         <div class="wrap">
             <h1><?php _e('Easy Slug Protect 設定', $text_domain); ?></h1>
 
+            <!-- 使い方説明 -->
+            <div class="esp-section">
+                <h2><?php _e('使い方', $text_domain); ?></h2>
+                <ol>
+                    <li>
+                        <?php _e('ログインページに使用する固定ページを作成し、[esp_login_form] を設置してください。', $text_domain); ?>
+                        <br><?php _e('ログインページは保護したいスラッグ配下でなくても大丈夫です。', $text_domain); ?>
+                    </li>
+                    <li>
+                        <?php _e('「保護パスを追加」して、設定を入力してください。', $text_domain); ?>
+                    </li>
+                    <li>
+                        <?php _e('その他設定を適宜行ってください', $text_domain); ?>
+                    </li>
+                    <li>
+                        <?php _e('[esp_logout_button]を任意のページに配置することでログアウトボタンを追加出来ます。', $text_domain); ?>
+                    </li>
+                </ol>
+                <h2><?php _e('ショートコード内で行える設定', $text_domain); ?></h2>
+                <h3><?php _e('[esp_login_form]', $text_domain); ?></h3>
+                <ul>
+                    <li>
+                        <?php _e('path="" : ログインページに設定していないページにログインフォームを設置する際には、このオプションでどのパスに対するフォームなのかを指定してください', $text_domain); ?>
+                    </li>
+                </ul>
+                <h3><?php _e('[esp_logout_button]', $text_domain); ?></h3>
+                <ul>
+                    <li>
+                        <?php _e('redirect_to="" : ログアウト後のリダイレクト先を指定できます。', $text_domain); ?>
+                    </li>
+                    <li>
+                        <?php _e('text="" : ボタンのテキストを指定します。（設定推奨）', $text_domain); ?>
+                    </li>
+                    <li>
+                        <?php _e('class="" : ボタンに任意のクラスを追加します。', $text_domain); ?>
+                    </li>
+                    <li>
+                        <?php _e('path="" : ログアウトするパスを指定できます。（未設定の場合ボタンが配置されているパス）', $text_domain); ?>
+                    </li>
+                </ul>
+            </div>
+
             <form method="post" action="options.php" id="esp-settings-form">
                 <?php settings_fields('esp_settings_group'); ?>
                 <input type="hidden" name="option_page" value="esp_settings_group">

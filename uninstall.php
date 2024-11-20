@@ -1,8 +1,12 @@
 <?php
 // プラグインが直接呼び出された場合は終了
 if (!defined('WP_UNINSTALL_PLUGIN')) {
-    echo 'die';
     die;
+}
+
+// 直接アクセス禁止
+if (!defined('ABSPATH')) {
+    exit;
 }
 
 // 安全のため、削除対象のプラグインか確認
@@ -10,21 +14,19 @@ $plugin_file = basename(dirname(__FILE__)) . '/easy-slug-protect.php';
 if (WP_UNINSTALL_PLUGIN !== $plugin_file) {
     die;
 }
-
 // プラグインのデータを完全に削除
 global $wpdb;
+// コンフィグ読み込み
+require_once plugin_dir_path(__FILE__) . 'includes/class-esp-config.php';
 
 // テーブルの削除
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}esp_login_attempts");
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}esp_login_remember");
+foreach(ESP_Config::DB_TABLES as $table_name){
+    $table = $wpdb->prefix . $table_name;
+    $wpdb->query("DROP TABLE IF EXISTS `{$table}`");
+}
 
 // オプションの削除
-delete_option('esp_protected_paths');
-delete_option('esp_bruteforce_settings');
-delete_option('esp_remember_settings');
+delete_option(ESP_Config::OPTION_KEY);
 
-// データベースの最適化（オプショナル）
+// データベースの最適化
 $wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}options");
-
-// WP-Cronのスケジュールを削除
-wp_clear_scheduled_hook('esp_daily_cleanup');

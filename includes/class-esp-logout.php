@@ -53,13 +53,15 @@ class ESP_Logout {
         }
 
         return sprintf(
-            '<form method="post" action="%s" class="esp-logout-form">
-                <input type="hidden" name="esp_action" value="logout">
-                <input type="hidden" name="esp_nonce" value="%s">
-                <input type="hidden" name="esp_logout_path" value="%s">
-                <input type="hidden" name="redirect_to" value="%s">
-                <button type="submit" class="%s">%s</button>
-            </form>',
+            '<div class="esp-logout-form">
+                <form method="post" action="%s" class="esp-logout-form">
+                    <input type="hidden" name="esp_action" value="logout">
+                    <input type="hidden" name="esp_nonce" value="%s">
+                    <input type="hidden" name="esp_logout_path" value="%s">
+                    <input type="hidden" name="redirect_to" value="%s">
+                    <button type="submit" class="esp-submit %s">%s</button>
+                </form>
+            </div>',
             esc_url(home_url('/')),
             wp_create_nonce('esp_logout'),
             esc_attr($atts['path']),

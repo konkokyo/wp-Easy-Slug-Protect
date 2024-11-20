@@ -1,4 +1,3 @@
-
 <?php
 // 直接アクセス禁止
 if (!defined('ABSPATH')) {
@@ -72,17 +71,4 @@ class ESP_Setup {
         flush_rewrite_rules();
     }
 
-    public function uninstall() {
-        global $wpdb;
-        
-        // テーブルの削除
-        foreach(ESP_Config::DB_TABLES as $table_name){
-            $table = $wpdb->prefix . $table_name;
-            $wpdb->query("DROP TABLE IF EXISTS `{$table}`");
-        }
-        // オプションの削除
-        foreach(ESP_Config::OPTION_NAMES as $option_name){
-            delete_option($option_name);
-        }
-    }
 }

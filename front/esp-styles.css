@@ -45,12 +45,16 @@
 }
 
 /* ログアウトボタン */
-.esp-logout-form {
-	display: inline-block;
+.esp-logout-form .esp-submit {
+	background-color: unset;
+	border: #006799 solid 1px;
+	border-radius: 5px;
+	color: #006799;
 }
 
-.esp-logout-button:hover {
-	background: #b32d2d;
+.esp-logout-form .esp-submit:hover {
+	background-color: #006799;
+	color: #fff;
 }
 
 /* レスポンシブ対応 */
