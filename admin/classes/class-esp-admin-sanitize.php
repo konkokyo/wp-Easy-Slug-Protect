@@ -144,4 +144,29 @@ class ESP_Sanitize {
 
         return $sanitized_settings;
     }
+
+    /**
+     * メンテナンス設定のサニタイズ
+     */
+    public function sanitize_mente_settings($settings) {
+        if (!is_array($settings)) {
+            return ESP_Config::OPTION_DEFAULTS['mente'];
+        }
+
+        $sanitized = array();
+        $sanitized['mente_mode'] = !empty($settings['mente_mode']);
+        $sanitized['login_page'] = absint($settings['login_page']);
+        $sanitized['finish_date'] = sanitize_text_field($settings['finish_date']);
+
+        // パスワード処理
+        if (!empty($settings['password'])) {
+            $sanitized['password'] = wp_hash_password($settings['password']);
+        } else {
+            // 既存のパスワードを維持
+            $current_settings = ESP_Option::get_current_setting('mente');
+            $sanitized['password'] = $current_settings['password'];
+        }
+
+        return $sanitized;
+    }
 }

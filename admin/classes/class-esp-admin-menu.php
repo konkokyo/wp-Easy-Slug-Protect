@@ -34,6 +34,7 @@ class ESP_Admin_Menu {
         $bruteforce_settings = ESP_Option::get_current_setting('brute');
         $remember_settings = ESP_Option::get_current_setting('remember');
         $mail_settings =  ESP_Option::get_current_setting('mail');
+        $mente_settings =  ESP_Option::get_current_setting('mente');
 
         $text_domain = ESP_Config::TEXT_DOMAIN;
         $option_key = ESP_Config::OPTION_KEY
@@ -184,6 +185,7 @@ class ESP_Admin_Menu {
                     </table>
                 </div>
 
+                <!-- メール通知設定セクション -->
                 <div class="esp-section">
                     <h2><?php _e('メール通知設定', $text_domain); ?></h2>
                     <table class="form-table">
@@ -262,6 +264,83 @@ class ESP_Admin_Menu {
                         </tr>
                     </table>
                 </div>
+
+                <!-- メンテナンスモード設定 -->
+                    <div class="esp-section">
+                        <h2><?php _e('メンテナンスモード設定', $text_domain); ?></h2>
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">
+                                    <label for="esp-mente-mode">
+                                        <?php _e('メンテナンスモード', $text_domain); ?>
+                                    </label>
+                                </th>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" 
+                                            id="esp-mente-mode"
+                                            name="<?php echo $option_key; ?>[mente][mente_mode]"
+                                            value="1"
+                                            <?php checked($mente_settings['mente_mode']); ?>>
+                                        <?php _e('メンテナンスモードを有効にする', $text_domain); ?>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="esp-mente-password">
+                                        <?php _e('メンテナンスモードパスワード', $text_domain); ?>
+                                    </label>
+                                </th>
+                                <td>
+                                    <input type="password" 
+                                        id="esp-mente-password"
+                                        name="<?php echo $option_key; ?>[mente][password]" 
+                                        class="regular-text"
+                                        placeholder="<?php _e('変更する場合のみ入力', $text_domain); ?>">
+                                    <p class="description">
+                                        <?php _e('空白の場合、既存のパスワードが維持されます', $text_domain); ?>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="esp-mente-login-page">
+                                        <?php _e('メンテナンスモードログインページ', $text_domain); ?>
+                                    </label>
+                                </th>
+                                <td>
+                                    <?php 
+                                    wp_dropdown_pages(array(
+                                        'name' => $option_key. '[mente][login_page]',
+                                        'selected' => $mente_settings['login_page'],
+                                        'show_option_none' => __('選択してください', $text_domain),
+                                        'option_none_value' => ''
+                                    )); 
+                                    ?>
+                                    <p class="description">
+                                        <?php _e('選択したページに [esp_login_form path="maintenance"] ショートコードを配置してください', $text_domain); ?>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="esp-mente-finish-date">
+                                        <?php _e('メンテナンス終了予定日時', $text_domain); ?>
+                                    </label>
+                                </th>
+                                <td>
+                                    <input type="datetime-local" 
+                                        id="esp-mente-finish-date"
+                                        name="<?php echo $option_key; ?>[mente][finish_date]"
+                                        value="<?php echo esc_attr($mente_settings['finish_date']); ?>">
+                                    <p class="description">
+                                        <?php _e('空白の場合、終了日時は設定されません', $text_domain); ?>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                 <?php submit_button(); ?>
             </form>
         </div>

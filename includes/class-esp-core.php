@@ -118,6 +118,10 @@ class ESP_Core {
             return;
         }
 
+        // メンテナンスモードの確認
+        $mente = ESP_Mente::get_instance();
+        $mente->check_and_render();
+
         // 現在のパスを取得
         $current_path = $this->get_current_path();
 

@@ -36,6 +36,12 @@ class ESP_Config {
                 'brute_force' => false,
                 'critical_error' => true
             )
+        ),
+        'mente' => array(
+            'mente_mode' => false,
+            'login_page' => '',
+            'finish_date' => '',
+            'password' => ''
         )
     );
 

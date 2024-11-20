@@ -106,6 +106,11 @@ class ESP_Settings {
             isset($input['mail']) ? $input['mail'] : ESP_Option::get_current_setting('mail')
         );
 
+        // メンテナンス設定のサニタイズ
+        $sanitized['mente'] = $this->sanitize->sanitize_mente_settings(
+            isset($input['mente']) ? $input['mente'] : ESP_Option::get_current_setting('mente')
+        );
+
         return $sanitized;
     }
 

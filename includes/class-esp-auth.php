@@ -105,9 +105,8 @@ class ESP_Auth {
             return false;
         }
 
-        if (!wp_check_password($password, $path_settings['password'])) {
-            $this->security->record_failed_attempt($path_settings['path']);
-            $this->session->set_error(__('パスワードが正しくありません。', $this->text_domain));
+        // パスワードチェック
+        if (!$this->check_password($password, $path_settings['password'])) {
             return false;
         }
 
@@ -120,6 +119,24 @@ class ESP_Auth {
         }
 
         return true;
+    }
+
+    /**
+     * パスワードチェック
+     * @param string $pass 検証対象のパスワード
+     * @param string $true_pass 正しいパスワード（wp_hashの値）
+     * @param bool $error_mes エラーメッセージ表示するか（初期値true）
+     * @return bool
+     */
+    public function check_password($pass, $true_pass, $error_mes = true){
+        if (wp_check_password($pass, $true_pass)) {
+            return true;
+        }
+        if ($error) {
+            $this->security->record_failed_attempt($path_settings['path']);
+            $this->session->set_error(__('パスワードが正しくありません。', $this->text_domain));
+        }
+        return false;
     }
 
     /**
