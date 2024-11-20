@@ -59,6 +59,7 @@ class ESP_Admin_Assets {
             'esp-admin-scripts',
             'espAdminData',
             array(
+                'optionKey' => ESP_Config::OPTION_KEY,
                 'pages_list' => $pages_list,
                 'i18n' => $this::localize_data()
             )

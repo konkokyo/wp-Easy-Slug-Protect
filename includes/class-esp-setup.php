@@ -1,3 +1,4 @@
+
 <?php
 // 直接アクセス禁止
 if (!defined('ABSPATH')) {
@@ -62,10 +63,8 @@ class ESP_Setup {
      * コンフィグに基づいてオプション作成
      */
     private function create_options() {
-        foreach(ESP_Config::OPTION_NAMES as $key => $option_name){
-            if (get_option($option_name) === false) {
-                add_option($option_name, ESP_Config::OPTION_DEFAULTS[$key]);
-            }
+        if (get_option(ESP_Config::OPTION_KEY) === false) {                
+            add_option(ESP_Config::OPTION_KEY, ESP_Config::OPTION_DEFAULTS);
         }
     }
 

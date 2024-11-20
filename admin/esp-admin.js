@@ -39,7 +39,7 @@
 							<p>
 								<label>${espAdminData.i18n.path}</label>
 								<input type="text" 
-									name="esp_protected_paths[${this.pathCount}][path]" 
+									name="${espAdminData.optionKey}[path][${this.pathCount}][path]" 
 									class="esp-path-input regular-text"
 									placeholder="/example/"
 									required>
@@ -51,7 +51,7 @@
 								<label>${espAdminData.i18n.password}</label>
 								<div class="esp-password-field">
 									<input type="password" 
-										name="esp_protected_paths[${this.pathCount}][password]" 
+										name="${espAdminData.optionKey}[path][${this.pathCount}][password]" 
 										class="regular-text"
 										required>
 									<button type="button" class="button esp-toggle-password">
@@ -83,18 +83,17 @@
 			 * @returns {string} セレクトボックスのHTML
 			 */
 			getPageSelectHTML: function (index) {
-				return `<select name="esp_protected_paths[${index}][login_page]" required>
+				return `<select name="${espAdminData.optionKey}[path][${index}][login_page]" required>
 					<option value="">${espAdminData.i18n.selectPage}</option>
 					${espAdminData.pages_list}
 				</select>`;
 			},
-
 			/**
 			 * 既存のパスを変更できないようにする
 			 */
 			lockExistingPaths: function () {
 				$(".esp-path-item").each(function () {
-					const $pathInput = $(this).find('input[name*="[path]"]');
+					const $pathInput = $(this).find('input[data-input-lock="true"]');
 					const currentValue = $pathInput.val();
 					if ($pathInput.val()) {
 						// パス入力フィールドを読み取り専用に

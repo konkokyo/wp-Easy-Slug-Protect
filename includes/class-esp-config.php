@@ -6,14 +6,7 @@ if (!defined('ABSPATH')) {
 
 class ESP_Config {
     const TEXT_DOMAIN = 'easy-slug-protect';
-
-    // 略称から正しい設定名を取得できる定数
-    const OPTION_NAMES = array(
-        'path'     => 'esp_protected_paths',
-        'brute'    => 'esp_bruteforce_settings',
-        'remember' => 'esp_remember_settings',
-        'mail'     => 'esp_mail_settings'
-    );
+    const OPTION_KEY = 'esp_settings';
 
     const OPTION_DEFAULTS = array(
         'path' => array(),
