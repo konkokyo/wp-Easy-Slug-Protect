@@ -18,8 +18,26 @@ class ESP_Session {
      * シングルトンパターンのためprivate
      */
     private function __construct() {
+        add_action('init', [$this, 'start_session'], 1);
+        add_action('wp_logout', [$this, 'end_session']);
+        add_action('wp_login', [$this, 'end_session']);
+    }
+
+    /**
+     * セッションの開始
+     */
+    public function start_session() {
         if (!is_admin() && !wp_doing_ajax() && session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
+        }
+    }
+
+    /**
+     * セッションの終了
+     */
+    public function end_session() {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
         }
     }
 

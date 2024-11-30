@@ -72,8 +72,7 @@ class ESP_Core {
         add_shortcode('esp_logout_button', [$this, 'render_logout_button']);
 
         // フィルターの初期化
-        $this->filter->init();
-
+        add_action('wp_loaded', [$this->filter, 'init']);
     }
 
     /**
@@ -118,10 +117,12 @@ class ESP_Core {
         // 保護対象のパスかチェック
         $target_path = $this->get_matching_protected_path($current_path, $protected_paths);
 
-        // 現在のページがログインページかチェックし設定取得
-        if (isset($post->ID)){
-            $is_login_page = $this->is_login_page($post->ID);
+        // ページ情報が取得出来ない場合終了
+        if (is_null($post) || !isset($post->ID)){
+            return;
         }
+        // 現在のページがログインページかチェックし設定取得
+		$is_login_page = $this->is_login_page($post->ID);
 
         // POSTリクエストの場合はログイン処理を優先
         if (isset($_POST['esp_password'])) {

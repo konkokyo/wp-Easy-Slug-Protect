@@ -124,8 +124,18 @@ class ESP_Filter {
      * 保護された投稿のキャッシュを再生成
      */
     public function regenerate_protected_posts_cache() {
+        // init後まで待つ
+        if (!did_action('init')) {
+            add_action('init', [$this, 'regenerate_protected_posts_cache'], 999);
+            return;
+        }
+
         $protected_paths = ESP_Option::get_current_setting('path');
-        $all_protected_posts = [];
+        if (empty($protected_paths)) {
+            delete_transient(self::CACHE_KEY);
+            error_log('eps: No protected paths found');
+            return;
+        }
 
         // すべての公開された投稿を取得
         $all_posts = get_posts([
@@ -135,6 +145,8 @@ class ESP_Filter {
             'fields'      => 'ids',
         ]);
 
+        $all_protected_posts = [];
+
         foreach ($protected_paths as $path_setting) {
             $path = $path_setting['path'];
             $protected_path = '/' . trim($path, '/') . '/';
@@ -142,21 +154,20 @@ class ESP_Filter {
 
             foreach ($all_posts as $post_id) {
                 $permalink = get_permalink($post_id);
-                if ($permalink === false) continue;
-
                 $parsed_url = parse_url($permalink);
                 $post_path = isset($parsed_url['path']) ? '/' . trim($parsed_url['path'], '/') . '/' : '/';
-
-                if (strpos($post_path, $protected_path) === 0) {
-                    $post_ids[] = $post_id;
+            
+                if (strpos($post_path, $protected_path) !== false) {
+                    // ここで$all_protected_posts[$protected_path]が配列かどうかを確認し、配列でなければ初期化
+                    if (!isset($all_protected_posts[$protected_path])) {
+                        $all_protected_posts[$protected_path] = [];
+                    }
+                    $all_protected_posts[$protected_path][] = $post_id; 
                 }
-            }
-
-            if (!empty($post_ids)) {
-                $all_protected_posts[$path] = $post_ids;
             }
         }
 
+        error_log('eps: Final protected posts: ' . json_encode($all_protected_posts));
         set_transient(self::CACHE_KEY, $all_protected_posts, self::CACHE_DURATION);
     }
 }

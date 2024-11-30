@@ -81,24 +81,26 @@ class ESP_Settings {
      */
     public function sanitize_settings($input) {
         $sanitized = array();
+
+        // error_log('esp: '. json_encode($input));
         
         // パス設定のサニタイズ
         $sanitized['path'] = $this->sanitize->sanitize_protected_paths(
             isset($input['path']) ? $input['path'] : ESP_Option::get_current_setting('path')
         );
-        error_log('esp: '.  json_encode($sanitized));
+        // error_log('esp: '.  json_encode($sanitized));
 
         // ブルートフォース設定のサニタイズ
         $sanitized['brute'] = $this->sanitize->sanitize_bruteforce_settings(
             isset($input['brute']) ? $input['brute'] : ESP_Option::get_current_setting('brute')
         );
-        error_log('esp: '.  json_encode($sanitized));
+        // error_log('esp: '.  json_encode($sanitized));
 
         // ログイン保持設定のサニタイズ
         $sanitized['remember'] = $this->sanitize->sanitize_remember_settings(
             isset($input['remember']) ? $input['remember'] : ESP_Option::get_current_setting('remember')
         );
-        error_log('esp: '.  json_encode($sanitized));
+        // error_log('esp: '.  json_encode($sanitized));
 
         // メール設定のサニタイズ
         $sanitized['mail'] = $this->sanitize->sanitize_mail_settings(

@@ -54,6 +54,14 @@ class ESP_Admin_Assets {
 
         $pages_list = $this->get_all_pages();
 
+        // 現在の設定値を取得
+        $current_settings = [
+            'path' => ESP_Option::get_current_setting('path'),
+            'brute' => ESP_Option::get_current_setting('brute'),
+            'remember' => ESP_Option::get_current_setting('remember'),
+            'mail' => ESP_Option::get_current_setting('mail')
+        ];
+
         // JavaScriptに渡すデータ
         wp_localize_script(
             'esp-admin-scripts',
@@ -61,6 +69,8 @@ class ESP_Admin_Assets {
             array(
                 'optionKey' => ESP_Config::OPTION_KEY,
                 'pages_list' => $pages_list,
+                'currentSettings' => $current_settings,
+                'settingsNonce' => wp_create_nonce('esp_settings_group-options'),
                 'i18n' => $this::localize_data()
             )
         );

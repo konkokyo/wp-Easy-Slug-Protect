@@ -90,6 +90,9 @@ class ESP_Admin_Menu {
                 <input type="hidden" name="action" value="update">
                 <?php wp_nonce_field('esp_settings_group-options', '_wpnonce', false); ?>
                 <input type="hidden" name="<?php echo $option_key; ?>[initialized]" value="1">
+                
+                <!-- パスが存在しない場合でもPOSTされるように空の配列を示す hidden フィールドを追加 -->
+                <input type="hidden" name="<?php echo $option_key; ?>[path]" value="">
 
                 <!-- 保護パスの設定セクション -->
                 <div class="esp-section">
