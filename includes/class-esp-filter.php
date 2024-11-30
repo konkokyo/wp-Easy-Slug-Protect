@@ -13,6 +13,16 @@ class ESP_Filter {
     private $auth;
 
     /**
+     * @var string トランジェントのキー
+     */
+    const CACHE_KEY = 'esp_protected_posts';
+
+    /**
+     * @var int キャッシュの有効期間（秒）
+     */
+    const CACHE_DURATION = DAY_IN_SECONDS;
+
+    /**
      * コンストラクタ
      */
     public function __construct() {
@@ -20,66 +30,102 @@ class ESP_Filter {
     }
 
     /**
-     * 初期化処理
+     * フィルタリング機能の初期化
      */
     public function init() {
+        // キャッシュを確認
+        $this->check_and_generate_cache();
+
+        // メインクエリの書き換え
         add_action('pre_get_posts', [$this, 'exclude_protected_posts']);
+
+        // 投稿の変更時にキャッシュを更新
+        add_action('save_post', [$this, 'regenerate_protected_posts_cache']);
+        add_action('delete_post', [$this, 'regenerate_protected_posts_cache']);
+        add_action('trash_post', [$this, 'regenerate_protected_posts_cache']);
+        add_action('update_option_' . ESP_Config::OPTION_KEY, [$this, 'regenerate_protected_posts_cache']);
+
+        // パーマリンク構造が変更された時もキャッシュを更新
+        add_action('permalink_structure_changed', [$this, 'regenerate_protected_posts_cache']);
     }
 
     /**
-     * 保護されたページをクエリから除外する
+     * キャッシュの存在確認と生成
+     */
+    private function check_and_generate_cache() {
+        $cached_ids = get_transient(self::CACHE_KEY);
+        if ($cached_ids === false) {
+            $this->regenerate_protected_posts_cache();
+        }
+    }
+
+    /**
+     * 保護されたページをクエリから除外
      */
     public function exclude_protected_posts($query) {
-        // 管理画面やREST APIでは適用しない
         if (is_admin() || (defined('REST_REQUEST') && REST_REQUEST)) {
             return;
         }
 
-        // メインクエリのみ対象
         if (!$query->is_main_query()) {
             return;
         }
 
-        // 検索、アーカイブ、タグ、フィード、サイトマップを対象
-        if (
-            $query->is_search() ||
-            $query->is_archive() ||
-            $query->is_tag() ||
-            $query->is_feed() ||
-            (function_exists('is_sitemap') && is_sitemap())
-        ) {
-            $excluded_post_ids = $this->get_protected_post_ids();
-
+        if ($query->is_search() || $query->is_archive() || $query->is_tag() || $query->is_feed() || (function_exists('is_sitemap') && is_sitemap())) {
+            $excluded_post_ids = $this->get_excluded_post_ids();
             if (!empty($excluded_post_ids)) {
-                $query->set('post__not_in', array_merge($query->get('post__not_in', []), $excluded_post_ids));
+                $current_excluded = $query->get('post__not_in', []);
+                $query->set('post__not_in', array_merge($current_excluded, $excluded_post_ids));
             }
         }
     }
 
     /**
-     * 保護されたページのIDを取得する
-     * @return array 保護されたページのIDの配列
+     * 除外すべき投稿IDを取得
+     * 
+     * @return array 除外すべき投稿IDの配列
      */
-    private function get_protected_post_ids() {
-        $protected_paths = ESP_Option::get_current_setting('path');
-        $excluded_post_ids = [];
-
-        // ログインしていない保護パスを収集
-        $paths_to_exclude = [];
-        foreach ($protected_paths as $path_setting) {
-            $path = $path_setting['path'];
-
-            // ユーザーがこのパスに対してログインしているかをチェック
-            if ($this->auth->is_logged_in($path)) {
-                continue;
-            }
-
-            $paths_to_exclude[] = $path;
+    private function get_excluded_post_ids() {
+        // キャッシュをチェック
+        $cached_ids = get_transient(self::CACHE_KEY);
+        if ($cached_ids !== false) {
+            return $this->filter_cached_ids($cached_ids);
         }
 
-        if (empty($paths_to_exclude)) {
+        // キャッシュがない場合は生成
+        $this->regenerate_protected_posts_cache();
+        $cached_ids = get_transient(self::CACHE_KEY);
+        
+        return $this->filter_cached_ids($cached_ids);
+    }
+
+    /**
+     * キャッシュされた投稿IDをログイン状態に基づいてフィルタリング
+     * 
+     * @param array $cached_ids キャッシュされた投稿ID
+     * @return array フィルタリング済みの投稿ID
+     */
+    private function filter_cached_ids($cached_ids) {
+        if (!is_array($cached_ids)) {
             return [];
         }
+
+        $result = [];
+        foreach ($cached_ids as $path => $ids) {
+            if (!$this->auth->is_logged_in($path)) {
+                $result = array_merge($result, $ids);
+            }
+        }
+
+        return array_unique($result);
+    }
+
+    /**
+     * 保護された投稿のキャッシュを再生成
+     */
+    public function regenerate_protected_posts_cache() {
+        $protected_paths = ESP_Option::get_current_setting('path');
+        $all_protected_posts = [];
 
         // すべての公開された投稿を取得
         $all_posts = get_posts([
@@ -89,20 +135,28 @@ class ESP_Filter {
             'fields'      => 'ids',
         ]);
 
-        foreach ($all_posts as $post_id) {
-            $permalink = get_permalink($post_id);
-            $parsed_url = parse_url($permalink);
-            $path = isset($parsed_url['path']) ? '/' . trim($parsed_url['path'], '/') . '/' : '/';
+        foreach ($protected_paths as $path_setting) {
+            $path = $path_setting['path'];
+            $protected_path = '/' . trim($path, '/') . '/';
+            $post_ids = [];
 
-            foreach ($paths_to_exclude as $protected_path) {
-                $protected_path = '/' . trim($protected_path, '/') . '/';
-                if (strpos($path, $protected_path) === 0) {
-                    $excluded_post_ids[] = $post_id;
-                    break;
+            foreach ($all_posts as $post_id) {
+                $permalink = get_permalink($post_id);
+                if ($permalink === false) continue;
+
+                $parsed_url = parse_url($permalink);
+                $post_path = isset($parsed_url['path']) ? '/' . trim($parsed_url['path'], '/') . '/' : '/';
+
+                if (strpos($post_path, $protected_path) === 0) {
+                    $post_ids[] = $post_id;
                 }
+            }
+
+            if (!empty($post_ids)) {
+                $all_protected_posts[$path] = $post_ids;
             }
         }
 
-        return $excluded_post_ids;
+        set_transient(self::CACHE_KEY, $all_protected_posts, self::CACHE_DURATION);
     }
 }
