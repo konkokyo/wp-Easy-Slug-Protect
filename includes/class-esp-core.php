@@ -32,7 +32,13 @@ class ESP_Core {
      * @var ESP_Cookie ログアウト処理クラスのインスタンス
      */
     private $cookie;
-    
+
+    /**
+     * @var ESP_Filter フィルタークラスのインスタンス
+     */
+    private $filter;
+
+
 
     /**
      * コンストラクタ
@@ -43,6 +49,7 @@ class ESP_Core {
         $this->security = new ESP_Security();
         $this->session = ESP_Session::get_instance();
         $this->cookie = ESP_Cookie::get_instance();
+        $this->filter = new ESP_Filter();
     }
 
     /**
@@ -63,6 +70,9 @@ class ESP_Core {
         // ショートコードの登録
         add_shortcode('esp_login_form', [$this, 'render_login_form']);
         add_shortcode('esp_logout_button', [$this, 'render_logout_button']);
+
+        // フィルターの初期化
+        $this->filter->init();
 
     }
 
@@ -109,7 +119,9 @@ class ESP_Core {
         $target_path = $this->get_matching_protected_path($current_path, $protected_paths);
 
         // 現在のページがログインページかチェックし設定取得
-        $is_login_page = $this->is_login_page($post->ID);
+        if (isset($post->ID)){
+            $is_login_page = $this->is_login_page($post->ID);
+        }
 
         // POSTリクエストの場合はログイン処理を優先
         if (isset($_POST['esp_password'])) {
