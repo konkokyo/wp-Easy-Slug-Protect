@@ -192,6 +192,10 @@ class ESP_Settings {
                 $this->mail->notify_path_removed($path);
             }
         }
+
+        // 保護ページリストの更新
+        $filter = new ESP_Filter;
+        $filter->reset_cach();
     }
 
     /**

@@ -50,6 +50,13 @@ class ESP_Filter {
     }
 
     /**
+     * 外部からのキャッシュ更新用
+     */
+    public function reset_cach(){
+        $this->regenerate_protected_posts_cache();
+    }
+
+    /**
      * キャッシュの存在確認と生成
      */
     private function check_and_generate_cache() {
