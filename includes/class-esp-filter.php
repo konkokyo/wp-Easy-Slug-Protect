@@ -173,8 +173,6 @@ class ESP_Filter {
                 }
             }
         }
-
-        error_log('eps: Final protected posts: ' . json_encode($all_protected_posts));
         set_transient(self::CACHE_KEY, $all_protected_posts, self::CACHE_DURATION);
     }
 }
